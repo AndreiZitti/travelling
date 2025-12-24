@@ -183,7 +183,7 @@ export default function FlatMap({
           .on("mouseover", function (event, d) {
             const name = COUNTRY_NAMES[String(d.id)] || "Unknown";
             const code = getCountryCode(name);
-            const visited = code && isVisited(code);
+            const visited = code ? isVisited(code) : false;
 
             d3.select(this)
               .attr("fill", visited ? "#4f46e5" : "#9ca3af")
