@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --globe-bg: #0f0f1a;
+  --globe-unvisited: #2d2d44;
+  --globe-visited: #6366f1;
+  --globe-glow: #22d3ee;
+  --map-bg: #fafafa;
+  --map-unvisited: #f5f5f5;
+  --map-border: #e5e5e5;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Globe container */
+.globe-container {
+  background: var(--globe-bg);
+}
+
+/* Map container */
+.map-container {
+  background: var(--map-bg);
+}
+
+/* Smooth transitions for view switching */
+.view-transition {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Country hover effect for 2D map */
+.country-path {
+  transition: fill 0.2s ease;
+  cursor: pointer;
+}
+
+.country-path:hover {
+  filter: brightness(0.9);
+}
+
+/* Tooltip styling */
+.tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  z-index: 1000;
+  white-space: nowrap;
+}
