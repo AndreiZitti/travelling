@@ -46,15 +46,32 @@ const GEOJSON_URL =
   "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson";
 
 export default function Globe({
-  visitedCountries,
   onCountryClick,
   isVisited,
 }: GlobeProps) {
   const globeRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [countries, setCountries] = useState<CountryFeature[]>([]);
   const [hoverCountry, setHoverCountry] = useState<CountryFeature | null>(null);
   const [rings, setRings] = useState<RingData[]>([]);
-  const [isAutoRotating, setIsAutoRotating] = useState(true);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [globeReady, setGlobeReady] = useState(false);
+
+  // Handle resize
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        setDimensions({
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight,
+        });
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener("resize", updateDimensions);
+    return () => window.removeEventListener("resize", updateDimensions);
+  }, []);
 
   // Load country data
   useEffect(() => {
@@ -66,19 +83,25 @@ export default function Globe({
       .catch((err) => console.error("Failed to load countries:", err));
   }, []);
 
-  // Setup globe controls
+  // Setup globe controls after globe is ready
   useEffect(() => {
-    if (globeRef.current) {
-      const controls = globeRef.current.controls();
+    if (globeReady && globeRef.current) {
+      const globe = globeRef.current;
+
+      // Set initial point of view
+      globe.pointOfView({ lat: 20, lng: 0, altitude: 2.5 });
+
+      // Configure controls
+      const controls = globe.controls();
       if (controls) {
-        controls.autoRotate = isAutoRotating;
+        controls.autoRotate = true;
         controls.autoRotateSpeed = 0.5;
         controls.enableZoom = true;
         controls.minDistance = 150;
         controls.maxDistance = 500;
       }
     }
-  }, [isAutoRotating, countries]);
+  }, [globeReady]);
 
   // Get country ISO code from feature
   const getCountryCode = useCallback((feature: CountryFeature): string => {
@@ -157,20 +180,22 @@ export default function Globe({
     [getCountryCode, isVisited, onCountryClick, getCountryCentroid]
   );
 
-  // Stop auto-rotate on interaction
+  // Stop auto-rotate on interaction, resume after 5s
   const handleInteractionStart = useCallback(() => {
-    setIsAutoRotating(false);
-  }, []);
+    if (globeRef.current) {
+      const controls = globeRef.current.controls();
+      if (controls) {
+        controls.autoRotate = false;
 
-  // Resume auto-rotate after idle
-  useEffect(() => {
-    if (!isAutoRotating) {
-      const timer = setTimeout(() => {
-        setIsAutoRotating(true);
-      }, 5000);
-      return () => clearTimeout(timer);
+        // Resume after 5 seconds of no interaction
+        setTimeout(() => {
+          if (controls) {
+            controls.autoRotate = true;
+          }
+        }, 5000);
+      }
     }
-  }, [isAutoRotating]);
+  }, []);
 
   // Polygon styling
   const getPolygonColor = useCallback(
@@ -198,46 +223,52 @@ export default function Globe({
 
   return (
     <div
+      ref={containerRef}
       className="w-full h-full globe-container relative"
       onMouseDown={handleInteractionStart}
       onTouchStart={handleInteractionStart}
     >
-      <GlobeGL
-        ref={globeRef}
-        globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
-        backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
-        polygonsData={countries}
-        polygonCapColor={getPolygonColor}
-        polygonSideColor={() => "rgba(45, 45, 68, 0.3)"}
-        polygonStrokeColor={() => "rgba(100, 100, 120, 0.3)"}
-        polygonAltitude={getPolygonAltitude}
-        polygonLabel={(feature: object) => {
-          const f = feature as CountryFeature;
-          const props = f.properties;
-          const name = props.ADMIN || props.NAME || "Unknown";
-          const code = getCountryCode(f);
-          const visited = code && isVisited(code);
-          return `
-            <div class="tooltip">
-              ${name} ${visited ? "✓" : ""}
-            </div>
-          `;
-        }}
-        onPolygonClick={(feature: object) =>
-          handleCountryClick(feature as CountryFeature)
-        }
-        onPolygonHover={(feature: object | null) =>
-          setHoverCountry(feature as CountryFeature | null)
-        }
-        polygonsTransitionDuration={300}
-        atmosphereColor="#6366f1"
-        atmosphereAltitude={0.15}
-        ringsData={rings}
-        ringColor={() => "#22d3ee"}
-        ringMaxRadius="maxR"
-        ringPropagationSpeed="propagationSpeed"
-        ringRepeatPeriod="repeatPeriod"
-      />
+      {dimensions.width > 0 && dimensions.height > 0 && (
+        <GlobeGL
+          ref={globeRef}
+          width={dimensions.width}
+          height={dimensions.height}
+          globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
+          backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+          polygonsData={countries}
+          polygonCapColor={getPolygonColor}
+          polygonSideColor={() => "rgba(45, 45, 68, 0.3)"}
+          polygonStrokeColor={() => "rgba(100, 100, 120, 0.3)"}
+          polygonAltitude={getPolygonAltitude}
+          polygonLabel={(feature: object) => {
+            const f = feature as CountryFeature;
+            const props = f.properties;
+            const name = props.ADMIN || props.NAME || "Unknown";
+            const code = getCountryCode(f);
+            const visited = code && isVisited(code);
+            return `
+              <div class="tooltip">
+                ${name} ${visited ? "✓" : ""}
+              </div>
+            `;
+          }}
+          onPolygonClick={(feature: object) =>
+            handleCountryClick(feature as CountryFeature)
+          }
+          onPolygonHover={(feature: object | null) =>
+            setHoverCountry(feature as CountryFeature | null)
+          }
+          polygonsTransitionDuration={300}
+          atmosphereColor="#6366f1"
+          atmosphereAltitude={0.15}
+          ringsData={rings}
+          ringColor={() => "#22d3ee"}
+          ringMaxRadius="maxR"
+          ringPropagationSpeed="propagationSpeed"
+          ringRepeatPeriod="repeatPeriod"
+          onGlobeReady={() => setGlobeReady(true)}
+        />
+      )}
     </div>
   );
 }
