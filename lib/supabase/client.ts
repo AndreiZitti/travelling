@@ -7,6 +7,12 @@ export function createClient() {
     {
       db: {
         schema: 'travelling'
+      },
+      cookieOptions: {
+        domain: '.zitti.ro',
+        path: '/',
+        sameSite: 'lax',
+        secure: true
       }
     }
   );

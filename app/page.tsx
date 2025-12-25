@@ -18,8 +18,18 @@ const FlatMap = dynamic(() => import("@/components/FlatMap"), {
   ),
 });
 
+const Globe = dynamic(() => import("@/components/Globe"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-[#0a0a1a]">
+      <div className="text-white/50">Loading globe...</div>
+    </div>
+  ),
+});
+
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"flat" | "globe">("flat");
   const { visitedCountries, toggleCountry, isVisited, stats, isLoaded, clearAll, syncStatus } =
     useVisitedCountries();
 
@@ -80,24 +90,66 @@ export default function Home() {
               isVisited={isVisited}
             />
           </div>
-          <div className="p-4 border-t border-slate-200">
-            <button
-              onClick={clearAll}
-              className="w-full px-4 py-2 text-sm text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              Clear all visited countries
-            </button>
-          </div>
         </div>
 
         {/* Desktop Map */}
         <div className="flex-1 h-full relative">
-          <FlatMap
-            onCountryClick={toggleCountry}
-            isVisited={isVisited}
-          />
-          <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md text-sm text-slate-600">
-            Click countries to mark as visited • Scroll to zoom • Drag to pan
+          {/* Globe View */}
+          <div
+            className={`absolute inset-0 transition-opacity duration-500 ${
+              viewMode === "globe" ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+          >
+            <Globe
+              visitedCountries={visitedCountries}
+              onCountryClick={toggleCountry}
+              isVisited={isVisited}
+            />
+          </div>
+
+          {/* Flat Map View */}
+          <div
+            className={`absolute inset-0 transition-opacity duration-500 ${
+              viewMode === "flat" ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+          >
+            <FlatMap
+              onCountryClick={toggleCountry}
+              isVisited={isVisited}
+            />
+          </div>
+
+          {/* View Toggle */}
+          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-md overflow-hidden flex">
+            <button
+              onClick={() => setViewMode("flat")}
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                viewMode === "flat"
+                  ? "bg-indigo-500 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              Flat
+            </button>
+            <button
+              onClick={() => setViewMode("globe")}
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                viewMode === "globe"
+                  ? "bg-indigo-500 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              Globe
+            </button>
+          </div>
+
+          <div className={`absolute bottom-4 left-4 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md text-sm ${
+            viewMode === "globe" ? "bg-black/50 text-white/80" : "bg-white/90 text-slate-600"
+          }`}>
+            {viewMode === "flat"
+              ? "Click countries to mark as visited • Scroll to zoom • Drag to pan"
+              : "Click countries to mark as visited • Drag to rotate • Scroll to zoom"
+            }
           </div>
         </div>
       </div>
@@ -106,12 +158,62 @@ export default function Home() {
       <div className="md:hidden w-full h-full pt-14">
         {/* Mobile Map (full screen) */}
         <div className="w-full h-full relative">
-          <FlatMap
-            onCountryClick={toggleCountry}
-            isVisited={isVisited}
-          />
-          <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md text-xs text-slate-600 text-center">
-            Tap countries to mark visited • Pinch to zoom • Drag to pan
+          {/* Globe View */}
+          <div
+            className={`absolute inset-0 transition-opacity duration-500 ${
+              viewMode === "globe" ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+          >
+            <Globe
+              visitedCountries={visitedCountries}
+              onCountryClick={toggleCountry}
+              isVisited={isVisited}
+            />
+          </div>
+
+          {/* Flat Map View */}
+          <div
+            className={`absolute inset-0 transition-opacity duration-500 ${
+              viewMode === "flat" ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+          >
+            <FlatMap
+              onCountryClick={toggleCountry}
+              isVisited={isVisited}
+            />
+          </div>
+
+          {/* View Toggle */}
+          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-md overflow-hidden flex">
+            <button
+              onClick={() => setViewMode("flat")}
+              className={`px-2 py-1.5 text-xs font-medium transition-colors ${
+                viewMode === "flat"
+                  ? "bg-indigo-500 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              Flat
+            </button>
+            <button
+              onClick={() => setViewMode("globe")}
+              className={`px-2 py-1.5 text-xs font-medium transition-colors ${
+                viewMode === "globe"
+                  ? "bg-indigo-500 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              Globe
+            </button>
+          </div>
+
+          <div className={`absolute bottom-4 left-4 right-4 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md text-xs text-center ${
+            viewMode === "globe" ? "bg-black/50 text-white/80" : "bg-white/90 text-slate-600"
+          }`}>
+            {viewMode === "flat"
+              ? "Tap countries to mark visited • Pinch to zoom • Drag to pan"
+              : "Tap countries to mark visited • Drag to rotate • Pinch to zoom"
+            }
           </div>
         </div>
       </div>
@@ -162,19 +264,6 @@ export default function Home() {
                   onToggleCountry={toggleCountry}
                   isVisited={isVisited}
                 />
-              </div>
-
-              {/* Footer */}
-              <div className="p-4 border-t border-slate-200">
-                <button
-                  onClick={() => {
-                    clearAll();
-                    setSidebarOpen(false);
-                  }}
-                  className="w-full px-4 py-2 text-sm text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  Clear all visited countries
-                </button>
               </div>
             </motion.div>
           </>

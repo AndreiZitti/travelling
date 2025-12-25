@@ -2,16 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { feature } from "topojson-client";
+import type { Topology, GeometryCollection } from "topojson-specification";
 import { getCountryByName } from "@/lib/countries";
 
-// Dynamic import to avoid SSR issues with react-globe.gl
-const GlobeGL = dynamic(() => import("react-globe.gl"), {
+// Dynamic import to avoid SSR issues
+const GlobeGL = dynamic(() => import("react-globe.gl").then(mod => mod.default), {
   ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-globe-bg">
-      <div className="text-white/50">Loading globe...</div>
-    </div>
-  ),
 });
 
 interface GlobeProps {
@@ -20,42 +17,97 @@ interface GlobeProps {
   isVisited: (countryId: string) => boolean;
 }
 
+interface CountryProperties {
+  name: string;
+}
+
 interface CountryFeature {
-  properties: {
-    ADMIN?: string;
-    NAME?: string;
-    ISO_A2?: string;
-    ISO_A3?: string;
-  };
-  geometry: {
-    type: string;
-    coordinates: number[][][];
-  };
+  id?: string | number;
+  properties: CountryProperties;
+  geometry: GeoJSON.Geometry;
 }
 
-interface RingData {
-  lat: number;
-  lng: number;
-  maxR: number;
-  propagationSpeed: number;
-  repeatPeriod: number;
-}
+// Same TopoJSON source as FlatMap
+const TOPOJSON_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
-// GeoJSON URL for country boundaries
-const GEOJSON_URL =
-  "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson";
+// Same mapping as FlatMap
+const normalizeId = (id: string | number | undefined): string => {
+  if (id === undefined) return "";
+  return String(parseInt(String(id), 10));
+};
+
+const COUNTRY_NAMES: Record<string, string> = {
+  "4": "Afghanistan", "8": "Albania", "12": "Algeria", "20": "Andorra",
+  "24": "Angola", "28": "Antigua and Barbuda", "32": "Argentina",
+  "51": "Armenia", "36": "Australia", "40": "Austria", "31": "Azerbaijan",
+  "44": "Bahamas", "48": "Bahrain", "50": "Bangladesh", "52": "Barbados",
+  "112": "Belarus", "56": "Belgium", "84": "Belize", "204": "Benin",
+  "64": "Bhutan", "68": "Bolivia", "70": "Bosnia and Herzegovina",
+  "72": "Botswana", "76": "Brazil", "96": "Brunei", "100": "Bulgaria",
+  "854": "Burkina Faso", "108": "Burundi", "132": "Cabo Verde",
+  "116": "Cambodia", "120": "Cameroon", "124": "Canada",
+  "140": "Central African Republic", "148": "Chad", "152": "Chile",
+  "156": "China", "170": "Colombia", "174": "Comoros", "178": "Congo",
+  "180": "Congo (DRC)", "188": "Costa Rica", "384": "Ivory Coast",
+  "191": "Croatia", "192": "Cuba", "196": "Cyprus", "203": "Czechia",
+  "208": "Denmark", "262": "Djibouti", "212": "Dominica",
+  "214": "Dominican Republic", "218": "Ecuador", "818": "Egypt",
+  "222": "El Salvador", "226": "Equatorial Guinea", "232": "Eritrea",
+  "233": "Estonia", "748": "Eswatini", "231": "Ethiopia", "242": "Fiji",
+  "246": "Finland", "250": "France", "266": "Gabon", "270": "Gambia",
+  "268": "Georgia", "276": "Germany", "288": "Ghana", "300": "Greece",
+  "308": "Grenada", "320": "Guatemala", "324": "Guinea",
+  "624": "Guinea-Bissau", "328": "Guyana", "332": "Haiti", "340": "Honduras",
+  "348": "Hungary", "352": "Iceland", "356": "India", "360": "Indonesia",
+  "364": "Iran", "368": "Iraq", "372": "Ireland", "376": "Israel",
+  "380": "Italy", "388": "Jamaica", "392": "Japan", "400": "Jordan",
+  "398": "Kazakhstan", "404": "Kenya", "296": "Kiribati",
+  "408": "North Korea", "410": "South Korea", "414": "Kuwait",
+  "417": "Kyrgyzstan", "418": "Laos", "428": "Latvia", "422": "Lebanon",
+  "426": "Lesotho", "430": "Liberia", "434": "Libya", "438": "Liechtenstein",
+  "440": "Lithuania", "442": "Luxembourg", "450": "Madagascar",
+  "454": "Malawi", "458": "Malaysia", "462": "Maldives", "466": "Mali",
+  "470": "Malta", "584": "Marshall Islands", "478": "Mauritania",
+  "480": "Mauritius", "484": "Mexico", "583": "Micronesia", "498": "Moldova",
+  "492": "Monaco", "496": "Mongolia", "499": "Montenegro", "504": "Morocco",
+  "508": "Mozambique", "104": "Myanmar", "516": "Namibia", "520": "Nauru",
+  "524": "Nepal", "528": "Netherlands", "554": "New Zealand",
+  "558": "Nicaragua", "562": "Niger", "566": "Nigeria",
+  "807": "North Macedonia", "578": "Norway", "512": "Oman", "586": "Pakistan",
+  "585": "Palau", "275": "Palestine", "591": "Panama",
+  "598": "Papua New Guinea", "600": "Paraguay", "604": "Peru",
+  "608": "Philippines", "616": "Poland", "620": "Portugal", "634": "Qatar",
+  "642": "Romania", "643": "Russia", "646": "Rwanda",
+  "659": "Saint Kitts and Nevis", "662": "Saint Lucia",
+  "670": "Saint Vincent and the Grenadines", "882": "Samoa",
+  "674": "San Marino", "678": "Sao Tome and Principe", "682": "Saudi Arabia",
+  "686": "Senegal", "688": "Serbia", "690": "Seychelles",
+  "694": "Sierra Leone", "702": "Singapore", "703": "Slovakia",
+  "705": "Slovenia", "90": "Solomon Islands", "706": "Somalia",
+  "710": "South Africa", "728": "South Sudan", "724": "Spain",
+  "144": "Sri Lanka", "729": "Sudan", "740": "Suriname", "752": "Sweden",
+  "756": "Switzerland", "760": "Syria", "158": "Taiwan", "762": "Tajikistan",
+  "834": "Tanzania", "764": "Thailand", "626": "Timor-Leste", "768": "Togo",
+  "776": "Tonga", "780": "Trinidad and Tobago", "788": "Tunisia",
+  "792": "Turkey", "795": "Turkmenistan", "798": "Tuvalu", "800": "Uganda",
+  "804": "Ukraine", "784": "United Arab Emirates", "826": "United Kingdom",
+  "840": "United States", "858": "Uruguay", "860": "Uzbekistan",
+  "548": "Vanuatu", "336": "Vatican City", "862": "Venezuela",
+  "704": "Vietnam", "887": "Yemen", "894": "Zambia", "716": "Zimbabwe",
+  "-99": "Kosovo",
+  "238": "Falkland Islands", "260": "French Southern Territories",
+  "304": "Greenland", "540": "New Caledonia", "630": "Puerto Rico",
+  "732": "Western Sahara",
+};
 
 export default function Globe({
   onCountryClick,
   isVisited,
 }: GlobeProps) {
-  const globeRef = useRef<any>(null);
+  const globeEl = useRef<any>();
   const containerRef = useRef<HTMLDivElement>(null);
   const [countries, setCountries] = useState<CountryFeature[]>([]);
-  const [hoverCountry, setHoverCountry] = useState<CountryFeature | null>(null);
-  const [rings, setRings] = useState<RingData[]>([]);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [globeReady, setGlobeReady] = useState(false);
 
   // Handle resize
   useEffect(() => {
@@ -73,200 +125,96 @@ export default function Globe({
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
-  // Load country data
+  // Load country data from same source as FlatMap
   useEffect(() => {
-    fetch(GEOJSON_URL)
+    fetch(TOPOJSON_URL)
       .then((res) => res.json())
-      .then((data) => {
-        setCountries(data.features);
+      .then((topology: Topology<{ countries: GeometryCollection<CountryProperties> }>) => {
+        const geojson = feature(topology, topology.objects.countries);
+        setCountries((geojson as any).features);
       })
       .catch((err) => console.error("Failed to load countries:", err));
   }, []);
 
-  // Setup globe controls after globe is ready
-  useEffect(() => {
-    if (globeReady && globeRef.current) {
-      const globe = globeRef.current;
-
-      // Set initial point of view
-      globe.pointOfView({ lat: 20, lng: 0, altitude: 2.5 });
+  // Setup globe after it's ready
+  const handleGlobeReady = useCallback(() => {
+    if (globeEl.current) {
+      // Set initial view
+      globeEl.current.pointOfView({ lat: 20, lng: 0, altitude: 2.5 });
 
       // Configure controls
-      const controls = globe.controls();
+      const controls = globeEl.current.controls();
       if (controls) {
         controls.autoRotate = true;
-        controls.autoRotateSpeed = 0.5;
+        controls.autoRotateSpeed = 0.3;
         controls.enableZoom = true;
-        controls.minDistance = 150;
-        controls.maxDistance = 500;
       }
     }
-  }, [globeReady]);
+  }, []);
 
-  // Get country ISO code from feature
-  const getCountryCode = useCallback((feature: CountryFeature): string => {
-    const props = feature.properties;
-    // Try different property names for ISO code
-    if (props.ISO_A2 && props.ISO_A2 !== "-99") return props.ISO_A2;
-    // Fallback to lookup by name
-    const name = props.ADMIN || props.NAME || "";
+  // Get country code from feature
+  const getCountryCode = useCallback((feat: CountryFeature): string => {
+    const name = COUNTRY_NAMES[normalizeId(feat.id)] || "";
+    if (!name) return "";
     const country = getCountryByName(name);
     return country?.id || "";
   }, []);
 
-  // Get country centroid for ripple effect
-  const getCountryCentroid = useCallback(
-    (feature: CountryFeature): [number, number] => {
-      const coords = feature.geometry.coordinates;
-      if (!coords || coords.length === 0) return [0, 0];
-
-      // Handle both Polygon and MultiPolygon
-      let allCoords: number[][] = [];
-      if (feature.geometry.type === "Polygon") {
-        allCoords = coords[0] as unknown as number[][];
-      } else if (feature.geometry.type === "MultiPolygon") {
-        // Get the largest polygon
-        let maxLen = 0;
-        for (const poly of coords) {
-          const ring = (poly as unknown as number[][][])[0];
-          if (ring && ring.length > maxLen) {
-            maxLen = ring.length;
-            allCoords = ring;
-          }
-        }
-      }
-
-      if (allCoords.length === 0) return [0, 0];
-
-      // Calculate centroid
-      let sumLng = 0;
-      let sumLat = 0;
-      for (const coord of allCoords) {
-        sumLng += coord[0];
-        sumLat += coord[1];
-      }
-      return [sumLng / allCoords.length, sumLat / allCoords.length];
-    },
-    []
-  );
-
-  // Handle country click
-  const handleCountryClick = useCallback(
-    (feature: CountryFeature) => {
-      const countryCode = getCountryCode(feature);
-      if (!countryCode) return;
-
-      const wasVisited = isVisited(countryCode);
-      onCountryClick(countryCode);
-
-      // Add ripple effect when marking as visited
-      if (!wasVisited) {
-        const [lng, lat] = getCountryCentroid(feature);
-        const newRing: RingData = {
-          lat,
-          lng,
-          maxR: 8,
-          propagationSpeed: 4,
-          repeatPeriod: 1500,
-        };
-        setRings((prev) => [...prev, newRing]);
-
-        // Remove ring after animation
-        setTimeout(() => {
-          setRings((prev) => prev.filter((r) => r !== newRing));
-        }, 1500);
-      }
-    },
-    [getCountryCode, isVisited, onCountryClick, getCountryCentroid]
-  );
-
-  // Stop auto-rotate on interaction, resume after 5s
-  const handleInteractionStart = useCallback(() => {
-    if (globeRef.current) {
-      const controls = globeRef.current.controls();
-      if (controls) {
-        controls.autoRotate = false;
-
-        // Resume after 5 seconds of no interaction
-        setTimeout(() => {
-          if (controls) {
-            controls.autoRotate = true;
-          }
-        }, 5000);
-      }
+  // Handle click
+  const handleClick = useCallback((feat: object) => {
+    const code = getCountryCode(feat as CountryFeature);
+    if (code) {
+      onCountryClick(code);
     }
-  }, []);
+  }, [getCountryCode, onCountryClick]);
 
-  // Polygon styling
-  const getPolygonColor = useCallback(
-    (obj: object) => {
-      const feature = obj as CountryFeature;
-      const countryCode = getCountryCode(feature);
-      const visited = countryCode && isVisited(countryCode);
+  // Get color for country
+  const getColor = useCallback((feat: object): string => {
+    const code = getCountryCode(feat as CountryFeature);
+    if (code && isVisited(code)) {
+      return "rgba(99, 102, 241, 0.9)"; // indigo for visited
+    }
+    return "rgba(30, 30, 46, 0.8)"; // dark for not visited
+  }, [getCountryCode, isVisited]);
 
-      if (feature === hoverCountry) {
-        return visited ? "rgba(99, 102, 241, 0.9)" : "rgba(75, 75, 100, 0.8)";
-      }
-      return visited ? "rgba(99, 102, 241, 0.8)" : "rgba(45, 45, 68, 0.6)";
-    },
-    [getCountryCode, isVisited, hoverCountry]
-  );
+  // Get altitude for country
+  const getAltitude = useCallback((feat: object): number => {
+    const code = getCountryCode(feat as CountryFeature);
+    return code && isVisited(code) ? 0.02 : 0.005;
+  }, [getCountryCode, isVisited]);
 
-  const getPolygonAltitude = useCallback(
-    (obj: object) => {
-      const feature = obj as CountryFeature;
-      const countryCode = getCountryCode(feature);
-      return countryCode && isVisited(countryCode) ? 0.01 : 0.005;
-    },
-    [getCountryCode, isVisited]
-  );
+  // Get label
+  const getLabel = useCallback((feat: object): string => {
+    const f = feat as CountryFeature;
+    const name = COUNTRY_NAMES[normalizeId(f.id)] || "Unknown";
+    const code = getCountryCode(f);
+    const visited = code && isVisited(code);
+    return `<div style="background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${name}${visited ? " ✓" : ""}</div>`;
+  }, [getCountryCode, isVisited]);
 
   return (
     <div
       ref={containerRef}
-      className="w-full h-full globe-container relative"
-      onMouseDown={handleInteractionStart}
-      onTouchStart={handleInteractionStart}
+      className="w-full h-full"
+      style={{ background: "#0a0a1a" }}
     >
-      {dimensions.width > 0 && dimensions.height > 0 && (
+      {dimensions.width > 0 && dimensions.height > 0 && countries.length > 0 && (
         <GlobeGL
-          ref={globeRef}
+          ref={globeEl}
           width={dimensions.width}
           height={dimensions.height}
+          backgroundColor="rgba(0,0,0,0)"
           globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
-          backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
           polygonsData={countries}
-          polygonCapColor={getPolygonColor}
-          polygonSideColor={() => "rgba(45, 45, 68, 0.3)"}
-          polygonStrokeColor={() => "rgba(100, 100, 120, 0.3)"}
-          polygonAltitude={getPolygonAltitude}
-          polygonLabel={(feature: object) => {
-            const f = feature as CountryFeature;
-            const props = f.properties;
-            const name = props.ADMIN || props.NAME || "Unknown";
-            const code = getCountryCode(f);
-            const visited = code && isVisited(code);
-            return `
-              <div class="tooltip">
-                ${name} ${visited ? "✓" : ""}
-              </div>
-            `;
-          }}
-          onPolygonClick={(feature: object) =>
-            handleCountryClick(feature as CountryFeature)
-          }
-          onPolygonHover={(feature: object | null) =>
-            setHoverCountry(feature as CountryFeature | null)
-          }
-          polygonsTransitionDuration={300}
+          polygonCapColor={getColor}
+          polygonSideColor={() => "rgba(100, 100, 120, 0.2)"}
+          polygonStrokeColor={() => "#333"}
+          polygonAltitude={getAltitude}
+          polygonLabel={getLabel}
+          onPolygonClick={handleClick}
           atmosphereColor="#6366f1"
-          atmosphereAltitude={0.15}
-          ringsData={rings}
-          ringColor={() => "#22d3ee"}
-          ringMaxRadius="maxR"
-          ringPropagationSpeed="propagationSpeed"
-          ringRepeatPeriod="repeatPeriod"
-          onGlobeReady={() => setGlobeReady(true)}
+          atmosphereAltitude={0.2}
+          onGlobeReady={handleGlobeReady}
         />
       )}
     </div>
