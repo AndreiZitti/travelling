@@ -20,8 +20,14 @@ interface CountryProperties {
 const TOPOJSON_URL =
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
+// Helper to normalize TopoJSON ID (removes leading zeros)
+const normalizeId = (id: string | number | undefined): string => {
+  if (id === undefined) return "";
+  return String(parseInt(String(id), 10));
+};
+
 // TopoJSON numeric ID to country name mapping
-// Based on ISO 3166-1 numeric codes used in world-atlas@2/countries-110m.json
+// IDs are normalized (no leading zeros) for consistent lookup
 const COUNTRY_NAMES: Record<string, string> = {
   "4": "Afghanistan", "8": "Albania", "12": "Algeria", "20": "Andorra",
   "24": "Angola", "28": "Antigua and Barbuda", "32": "Argentina",
@@ -81,10 +87,10 @@ const COUNTRY_NAMES: Record<string, string> = {
   "548": "Vanuatu", "336": "Vatican City", "862": "Venezuela",
   "704": "Vietnam", "887": "Yemen", "894": "Zambia", "716": "Zimbabwe",
   "-99": "Kosovo",
-  // Territories and regions in TopoJSON that may appear
+  // Territories and regions in TopoJSON
   "238": "Falkland Islands", "260": "French Southern Territories",
   "304": "Greenland", "540": "New Caledonia", "630": "Puerto Rico",
-  "732": "Western Sahara", "280": "Germany", // West Germany (historical)
+  "732": "Western Sahara",
 };
 
 export default function FlatMap({
@@ -201,11 +207,11 @@ export default function FlatMap({
           .attr("class", "country")
           .attr("d", (d) => pathGenerator(d as GeoPermissibleObjects) || "")
           .attr("data-country-code", (d) => {
-            const name = COUNTRY_NAMES[String(d.id)] || "";
+            const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
             return getCountryCode(name);
           })
           .attr("fill", (d) => {
-            const name = COUNTRY_NAMES[String(d.id)] || "";
+            const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
             const code = getCountryCode(name);
             return code && isVisitedRef.current(code) ? "#6366f1" : "#d1d5db";
           })
@@ -213,7 +219,7 @@ export default function FlatMap({
           .attr("stroke-width", 0.5)
           .style("cursor", "pointer")
           .on("mouseover", function (event, d) {
-            const name = COUNTRY_NAMES[String(d.id)] || "Unknown";
+            const name = COUNTRY_NAMES[normalizeId(d.id)] || "Unknown";
             const code = getCountryCode(name);
             const visited = code ? isVisitedRef.current(code) : false;
 
@@ -237,7 +243,7 @@ export default function FlatMap({
             }));
           })
           .on("mouseout", function (_, d) {
-            const name = COUNTRY_NAMES[String(d.id)] || "";
+            const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
             const code = getCountryCode(name);
             const visited = code && isVisitedRef.current(code);
 
@@ -248,7 +254,7 @@ export default function FlatMap({
             setTooltip((prev) => ({ ...prev, visible: false }));
           })
           .on("click", function (_, d) {
-            const name = COUNTRY_NAMES[String(d.id)] || "";
+            const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
             const code = getCountryCode(name);
             if (code) {
               onCountryClickRef.current(code);
