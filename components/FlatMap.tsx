@@ -8,7 +8,6 @@ import type { Topology, GeometryCollection } from "topojson-specification";
 import { getCountryByName } from "@/lib/countries";
 
 interface FlatMapProps {
-  visitedCountries: Set<string>;
   onCountryClick: (countryId: string) => void;
   isVisited: (countryId: string) => boolean;
 }
@@ -21,7 +20,8 @@ interface CountryProperties {
 const TOPOJSON_URL =
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
-// Map of numeric IDs to country names
+// TopoJSON numeric ID to country name mapping
+// Based on ISO 3166-1 numeric codes used in world-atlas@2/countries-110m.json
 const COUNTRY_NAMES: Record<string, string> = {
   "4": "Afghanistan", "8": "Albania", "12": "Algeria", "20": "Andorra",
   "24": "Angola", "28": "Antigua and Barbuda", "32": "Argentina",
@@ -81,10 +81,13 @@ const COUNTRY_NAMES: Record<string, string> = {
   "548": "Vanuatu", "336": "Vatican City", "862": "Venezuela",
   "704": "Vietnam", "887": "Yemen", "894": "Zambia", "716": "Zimbabwe",
   "-99": "Kosovo",
+  // Territories and regions in TopoJSON that may appear
+  "238": "Falkland Islands", "260": "French Southern Territories",
+  "304": "Greenland", "540": "New Caledonia", "630": "Puerto Rico",
+  "732": "Western Sahara", "280": "Germany", // West Germany (historical)
 };
 
 export default function FlatMap({
-  visitedCountries,
   onCountryClick,
   isVisited,
 }: FlatMapProps) {
@@ -121,7 +124,32 @@ export default function FlatMap({
     return country?.id || "";
   }, []);
 
-  // Render map
+  // Store refs for isVisited and onCountryClick to avoid re-renders
+  const isVisitedRef = useRef(isVisited);
+  const onCountryClickRef = useRef(onCountryClick);
+
+  // Update refs when props change
+  useEffect(() => {
+    isVisitedRef.current = isVisited;
+    onCountryClickRef.current = onCountryClick;
+  }, [isVisited, onCountryClick]);
+
+  // Update country colors when visited status changes (without re-rendering map)
+  useEffect(() => {
+    if (!svgRef.current) return;
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("path.country").each(function() {
+      const el = d3.select(this);
+      const countryCode = el.attr("data-country-code");
+      if (countryCode) {
+        const visited = isVisited(countryCode);
+        el.attr("fill", visited ? "#6366f1" : "#d1d5db");
+      }
+    });
+  }, [isVisited]);
+
+  // Render map (only on dimension changes)
   useEffect(() => {
     if (!svgRef.current || dimensions.width === 0 || dimensions.height === 0)
       return;
@@ -172,10 +200,14 @@ export default function FlatMap({
           .append("path")
           .attr("class", "country")
           .attr("d", (d) => pathGenerator(d as GeoPermissibleObjects) || "")
+          .attr("data-country-code", (d) => {
+            const name = COUNTRY_NAMES[String(d.id)] || "";
+            return getCountryCode(name);
+          })
           .attr("fill", (d) => {
             const name = COUNTRY_NAMES[String(d.id)] || "";
             const code = getCountryCode(name);
-            return code && isVisited(code) ? "#6366f1" : "#d1d5db";
+            return code && isVisitedRef.current(code) ? "#6366f1" : "#d1d5db";
           })
           .attr("stroke", "#ffffff")
           .attr("stroke-width", 0.5)
@@ -183,7 +215,7 @@ export default function FlatMap({
           .on("mouseover", function (event, d) {
             const name = COUNTRY_NAMES[String(d.id)] || "Unknown";
             const code = getCountryCode(name);
-            const visited = code ? isVisited(code) : false;
+            const visited = code ? isVisitedRef.current(code) : false;
 
             d3.select(this)
               .attr("fill", visited ? "#4f46e5" : "#9ca3af")
@@ -207,7 +239,7 @@ export default function FlatMap({
           .on("mouseout", function (_, d) {
             const name = COUNTRY_NAMES[String(d.id)] || "";
             const code = getCountryCode(name);
-            const visited = code && isVisited(code);
+            const visited = code && isVisitedRef.current(code);
 
             d3.select(this)
               .attr("fill", visited ? "#6366f1" : "#d1d5db")
@@ -219,7 +251,7 @@ export default function FlatMap({
             const name = COUNTRY_NAMES[String(d.id)] || "";
             const code = getCountryCode(name);
             if (code) {
-              onCountryClick(code);
+              onCountryClickRef.current(code);
             }
           });
 
@@ -288,7 +320,7 @@ export default function FlatMap({
           .text("⟲");
       })
       .catch((err) => console.error("Failed to load map:", err));
-  }, [dimensions, visitedCountries, onCountryClick, isVisited, getCountryCode]);
+  }, [dimensions, getCountryCode]);
 
   return (
     <div ref={containerRef} className="w-full h-full relative bg-[#e8f4fc]">

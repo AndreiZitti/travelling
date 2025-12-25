@@ -6,6 +6,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useVisitedCountries } from "@/hooks/useVisitedCountries";
 import CountryList from "@/components/CountryList";
 import Stats from "@/components/Stats";
+import UserMenu from "@/components/UserMenu";
+import SyncStatus from "@/components/SyncStatus";
 
 const FlatMap = dynamic(() => import("@/components/FlatMap"), {
   ssr: false,
@@ -18,7 +20,7 @@ const FlatMap = dynamic(() => import("@/components/FlatMap"), {
 
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { visitedCountries, toggleCountry, isVisited, stats, isLoaded, clearAll } =
+  const { visitedCountries, toggleCountry, isVisited, stats, isLoaded, clearAll, syncStatus } =
     useVisitedCountries();
 
   if (!isLoaded) {
@@ -34,26 +36,39 @@ export default function Home() {
       {/* Mobile Header */}
       <div className="md:hidden absolute top-0 left-0 right-0 z-20 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
         <div>
-          <h1 className="text-lg font-semibold text-slate-800">Travel Map</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-semibold text-slate-800">Travel Map</h1>
+            <SyncStatus status={syncStatus} />
+          </div>
           <p className="text-xs text-slate-500">{stats.count} countries visited</p>
         </div>
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
-        >
-          <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          <UserMenu />
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
+          >
+            <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Desktop Layout */}
       <div className="hidden md:flex w-full h-full">
         {/* Desktop Sidebar */}
         <div className="w-80 h-full bg-white border-r border-slate-200 flex flex-col shadow-lg z-10">
-          <div className="p-4 border-b border-slate-200">
-            <h1 className="text-xl font-semibold text-slate-800">Travel Map</h1>
-            <p className="text-sm text-slate-500 mt-1">Track your adventures</p>
+          {/* Header with UserMenu */}
+          <div className="p-4 border-b border-slate-200 flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-semibold text-slate-800">Travel Map</h1>
+                <SyncStatus status={syncStatus} />
+              </div>
+              <p className="text-sm text-slate-500 mt-1">Track your adventures</p>
+            </div>
+            <UserMenu />
           </div>
           <div className="p-4 border-b border-slate-200">
             <Stats stats={stats} />
@@ -78,7 +93,6 @@ export default function Home() {
         {/* Desktop Map */}
         <div className="flex-1 h-full relative">
           <FlatMap
-            visitedCountries={visitedCountries}
             onCountryClick={toggleCountry}
             isVisited={isVisited}
           />
@@ -93,7 +107,6 @@ export default function Home() {
         {/* Mobile Map (full screen) */}
         <div className="w-full h-full relative">
           <FlatMap
-            visitedCountries={visitedCountries}
             onCountryClick={toggleCountry}
             isVisited={isVisited}
           />
