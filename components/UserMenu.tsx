@@ -63,12 +63,42 @@ export default function UserMenu() {
 
   if (!user) {
     return (
-      <Link
-        href="/login"
-        className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
-      >
-        Sign in
-      </Link>
+      <div className="relative" ref={dropdownRef}>
+        <button
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+          className="w-8 h-8 bg-slate-200 hover:bg-slate-300 rounded-full flex items-center justify-center text-slate-500 transition-colors"
+          title="Sign in"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </button>
+
+        {dropdownOpen && (
+          <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+            <Link
+              href="/login"
+              onClick={() => setDropdownOpen(false)}
+              className="block px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
+            >
+              Sign in
+            </Link>
+            <p className="px-4 py-2 text-xs text-slate-400">
+              Contact Zitti for an account 😉
+            </p>
+            <div className="border-t border-slate-100 mt-1 pt-1">
+              <a
+                href="https://zitti.ro"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block px-4 py-2 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                zitti.ro
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -142,6 +172,17 @@ export default function UserMenu() {
             </svg>
             Sign out
           </button>
+
+          <div className="border-t border-slate-100 mt-1 pt-1">
+            <a
+              href="https://zitti.ro"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block px-4 py-2 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              zitti.ro
+            </a>
+          </div>
         </div>
       )}
     </div>

@@ -8,6 +8,7 @@ import CountryList from "@/components/CountryList";
 import Stats from "@/components/Stats";
 import UserMenu from "@/components/UserMenu";
 import SyncStatus from "@/components/SyncStatus";
+import OnboardingModal from "@/components/OnboardingModal";
 
 const FlatMap = dynamic(() => import("@/components/FlatMap"), {
   ssr: false,
@@ -30,7 +31,7 @@ const Globe = dynamic(() => import("@/components/Globe"), {
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"flat" | "globe">("flat");
-  const { visitedCountries, toggleCountry, isVisited, stats, isLoaded, clearAll, syncStatus } =
+  const { visitedCountries, toggleCountry, isVisited, stats, isLoaded, syncStatus, showOnboarding, dismissOnboarding } =
     useVisitedCountries();
 
   if (!isLoaded) {
@@ -269,6 +270,11 @@ export default function Home() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Onboarding Modal for first-time users */}
+      {showOnboarding && (
+        <OnboardingModal onComplete={dismissOnboarding} />
+      )}
     </main>
   );
 }

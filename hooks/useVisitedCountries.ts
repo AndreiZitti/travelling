@@ -6,6 +6,7 @@ import { COUNTRIES, TOTAL_COUNTRIES, CONTINENTS, type Continent } from "@/lib/co
 import type { User } from "@supabase/supabase-js";
 
 const STORAGE_KEY = "visited-countries";
+const ONBOARDING_KEY = "has-seen-onboarding";
 const SYNC_DEBOUNCE_MS = 3000;
 
 export type SyncStatus = "idle" | "saving" | "saved" | "error";
@@ -21,6 +22,7 @@ export function useVisitedCountries() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const supabase = createClient();
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -40,6 +42,21 @@ export function useVisitedCountries() {
 
     return () => subscription.unsubscribe();
   }, [supabase]);
+
+  // Check if we should show onboarding for first-time visitors
+  useEffect(() => {
+    if (isLoaded) {
+      const hasSeenOnboarding = localStorage.getItem(ONBOARDING_KEY);
+      if (!hasSeenOnboarding) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [isLoaded]);
+
+  const dismissOnboarding = useCallback(() => {
+    localStorage.setItem(ONBOARDING_KEY, "true");
+    setShowOnboarding(false);
+  }, []);
 
   // Load visited countries from Supabase or localStorage
   useEffect(() => {
@@ -226,5 +243,7 @@ export function useVisitedCountries() {
     isLoaded,
     user,
     syncStatus,
+    showOnboarding,
+    dismissOnboarding,
   };
 }
