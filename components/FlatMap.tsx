@@ -5,10 +5,11 @@ import * as d3 from "d3";
 import { geoNaturalEarth1, geoPath, type GeoPermissibleObjects } from "d3-geo";
 import { feature } from "topojson-client";
 import type { Topology, GeometryCollection } from "topojson-specification";
-import { getCountryByName } from "@/lib/countries";
+import { getLocationByName } from "@/lib/locations";
 
 interface FlatMapProps {
   onCountryClick: (countryId: string) => void;
+  onCountryLongPress?: (countryId: string) => void;
   isVisited: (countryId: string) => boolean;
 }
 
@@ -16,9 +17,9 @@ interface CountryProperties {
   name: string;
 }
 
-// TopoJSON URL for world countries
+// TopoJSON URL for world countries (50m has better territory coverage than 110m)
 const TOPOJSON_URL =
-  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
 
 // Helper to normalize TopoJSON ID (removes leading zeros)
 const normalizeId = (id: string | number | undefined): string => {
@@ -91,10 +92,43 @@ const COUNTRY_NAMES: Record<string, string> = {
   "238": "Falkland Islands", "260": "French Southern Territories",
   "304": "Greenland", "540": "New Caledonia", "630": "Puerto Rico",
   "732": "Western Sahara",
+  // French territories
+  "258": "French Polynesia", "254": "French Guiana", "312": "Guadeloupe",
+  "474": "Martinique", "175": "Mayotte", "638": "Reunion",
+  "666": "Saint Pierre and Miquelon", "876": "Wallis and Futuna",
+  "652": "Saint Barthelemy", "663": "Saint Martin (French)",
+  // UK territories
+  "292": "Gibraltar", "136": "Cayman Islands", "60": "Bermuda",
+  "92": "British Virgin Islands", "796": "Turks and Caicos Islands",
+  "500": "Montserrat", "660": "Anguilla", "654": "Saint Helena",
+  "612": "Pitcairn Islands", "86": "British Indian Ocean Territory",
+  // US territories
+  "850": "US Virgin Islands", "316": "Guam", "16": "American Samoa",
+  "580": "Northern Mariana Islands",
+  // Dutch territories
+  "533": "Aruba", "531": "Curacao", "534": "Sint Maarten",
+  // Danish territories
+  "234": "Faroe Islands",
+  // Australian territories
+  "162": "Christmas Island", "166": "Cocos (Keeling) Islands", "574": "Norfolk Island",
+  // NZ territories
+  "184": "Cook Islands", "570": "Niue", "772": "Tokelau",
+  // Chinese territories
+  "344": "Hong Kong", "446": "Macau",
+  // Finnish territories
+  "248": "Aland Islands",
+  // Norwegian territories
+  "744": "Svalbard and Jan Mayen",
+  // Special regions and disputed territories
+  "10": "Antarctica", "239": "South Georgia and the South Sandwich Islands",
+  "334": "Heard Island and McDonald Islands", "535": "Caribbean Netherlands",
+  // Disputed/unrecognized (shown on map but may not be in our locations)
+  "900": "N. Cyprus", "901": "Somaliland", "902": "Siachen Glacier",
 };
 
 export default function FlatMap({
   onCountryClick,
+  onCountryLongPress,
   isVisited,
 }: FlatMapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -107,6 +141,15 @@ export default function FlatMap({
     visible: boolean;
   }>({ x: 0, y: 0, name: "", visited: false, visible: false });
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  // Refs for long press handling
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressFiredRef = useRef(false);
+  const onCountryLongPressRef = useRef(onCountryLongPress);
+
+  useEffect(() => {
+    onCountryLongPressRef.current = onCountryLongPress;
+  }, [onCountryLongPress]);
 
   // Handle resize
   useEffect(() => {
@@ -124,10 +167,10 @@ export default function FlatMap({
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
-  // Get country code from name
+  // Get country/territory code from name
   const getCountryCode = useCallback((name: string): string => {
-    const country = getCountryByName(name);
-    return country?.id || "";
+    const location = getLocationByName(name);
+    return location?.id || "";
   }, []);
 
   // Store refs for isVisited and onCountryClick to avoid re-renders
@@ -170,9 +213,9 @@ export default function FlatMap({
 
     const pathGenerator = geoPath().projection(projection);
 
-    // Create zoom behavior
+    // Create zoom behavior (50m map supports higher zoom)
     const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([1, 8])
+      .scaleExtent([1, 20])
       .on("zoom", (event) => {
         g.attr("transform", event.transform);
       });
@@ -254,10 +297,50 @@ export default function FlatMap({
             setTooltip((prev) => ({ ...prev, visible: false }));
           })
           .on("click", function (_, d) {
+            // Don't trigger click if long press fired
+            if (longPressFiredRef.current) {
+              longPressFiredRef.current = false;
+              return;
+            }
             const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
             const code = getCountryCode(name);
             if (code) {
               onCountryClickRef.current(code);
+            }
+          })
+          // Right-click for desktop
+          .on("contextmenu", function (event, d) {
+            event.preventDefault();
+            const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
+            const code = getCountryCode(name);
+            if (code && isVisitedRef.current(code) && onCountryLongPressRef.current) {
+              onCountryLongPressRef.current(code);
+            }
+          })
+          // Touch events for mobile long press
+          .on("touchstart", function (event, d) {
+            const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
+            const code = getCountryCode(name);
+            if (!code || !isVisitedRef.current(code)) return;
+
+            longPressFiredRef.current = false;
+            longPressTimerRef.current = setTimeout(() => {
+              longPressFiredRef.current = true;
+              if (onCountryLongPressRef.current) {
+                onCountryLongPressRef.current(code);
+              }
+            }, 500);
+          })
+          .on("touchend", function () {
+            if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current);
+              longPressTimerRef.current = null;
+            }
+          })
+          .on("touchmove", function () {
+            if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current);
+              longPressTimerRef.current = null;
             }
           });
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { feature } from "topojson-client";
 import type { Topology, GeometryCollection } from "topojson-specification";
-import { getCountryByName } from "@/lib/countries";
+import { getLocationByName } from "@/lib/locations";
 
 // Dynamic import to avoid SSR issues
 const GlobeGL = dynamic(() => import("react-globe.gl").then(mod => mod.default), {
@@ -14,6 +14,7 @@ const GlobeGL = dynamic(() => import("react-globe.gl").then(mod => mod.default),
 interface GlobeProps {
   visitedCountries: Set<string>;
   onCountryClick: (countryId: string) => void;
+  onCountryLongPress?: (countryId: string) => void;
   isVisited: (countryId: string) => boolean;
 }
 
@@ -27,8 +28,8 @@ interface CountryFeature {
   geometry: GeoJSON.Geometry;
 }
 
-// Same TopoJSON source as FlatMap
-const TOPOJSON_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+// Same TopoJSON source as FlatMap (50m has better territory coverage)
+const TOPOJSON_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
 
 // Same mapping as FlatMap
 const normalizeId = (id: string | number | undefined): string => {
@@ -95,19 +96,57 @@ const COUNTRY_NAMES: Record<string, string> = {
   "548": "Vanuatu", "336": "Vatican City", "862": "Venezuela",
   "704": "Vietnam", "887": "Yemen", "894": "Zambia", "716": "Zimbabwe",
   "-99": "Kosovo",
+  // Territories and regions in TopoJSON
   "238": "Falkland Islands", "260": "French Southern Territories",
   "304": "Greenland", "540": "New Caledonia", "630": "Puerto Rico",
   "732": "Western Sahara",
+  // French territories
+  "258": "French Polynesia", "254": "French Guiana", "312": "Guadeloupe",
+  "474": "Martinique", "175": "Mayotte", "638": "Reunion",
+  "666": "Saint Pierre and Miquelon", "876": "Wallis and Futuna",
+  "652": "Saint Barthelemy", "663": "Saint Martin (French)",
+  // UK territories
+  "292": "Gibraltar", "136": "Cayman Islands", "60": "Bermuda",
+  "92": "British Virgin Islands", "796": "Turks and Caicos Islands",
+  "500": "Montserrat", "660": "Anguilla", "654": "Saint Helena",
+  "612": "Pitcairn Islands", "86": "British Indian Ocean Territory",
+  // US territories
+  "850": "US Virgin Islands", "316": "Guam", "16": "American Samoa",
+  "580": "Northern Mariana Islands",
+  // Dutch territories
+  "533": "Aruba", "531": "Curacao", "534": "Sint Maarten",
+  // Danish territories
+  "234": "Faroe Islands",
+  // Australian territories
+  "162": "Christmas Island", "166": "Cocos (Keeling) Islands", "574": "Norfolk Island",
+  // NZ territories
+  "184": "Cook Islands", "570": "Niue", "772": "Tokelau",
+  // Chinese territories
+  "344": "Hong Kong", "446": "Macau",
+  // Finnish territories
+  "248": "Aland Islands",
+  // Norwegian territories
+  "744": "Svalbard and Jan Mayen",
+  // Special regions and disputed territories
+  "10": "Antarctica", "239": "South Georgia and the South Sandwich Islands",
+  "334": "Heard Island and McDonald Islands", "535": "Caribbean Netherlands",
+  // Disputed/unrecognized (shown on map but may not be in our locations)
+  "900": "N. Cyprus", "901": "Somaliland", "902": "Siachen Glacier",
 };
 
 export default function Globe({
   onCountryClick,
+  onCountryLongPress,
   isVisited,
 }: GlobeProps) {
   const globeEl = useRef<any>();
   const containerRef = useRef<HTMLDivElement>(null);
   const [countries, setCountries] = useState<CountryFeature[]>([]);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  // Refs for long press handling
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressFiredRef = useRef(false);
 
   // Handle resize
   useEffect(() => {
@@ -156,17 +195,53 @@ export default function Globe({
   const getCountryCode = useCallback((feat: CountryFeature): string => {
     const name = COUNTRY_NAMES[normalizeId(feat.id)] || "";
     if (!name) return "";
-    const country = getCountryByName(name);
-    return country?.id || "";
+    const location = getLocationByName(name);
+    return location?.id || "";
   }, []);
 
   // Handle click
   const handleClick = useCallback((feat: object) => {
+    // Don't trigger click if long press fired
+    if (longPressFiredRef.current) {
+      longPressFiredRef.current = false;
+      return;
+    }
     const code = getCountryCode(feat as CountryFeature);
     if (code) {
       onCountryClick(code);
     }
   }, [getCountryCode, onCountryClick]);
+
+  // Handle right-click for desktop
+  const handleRightClick = useCallback((feat: object, event: MouseEvent) => {
+    event.preventDefault();
+    const code = getCountryCode(feat as CountryFeature);
+    if (code && isVisited(code) && onCountryLongPress) {
+      onCountryLongPress(code);
+    }
+  }, [getCountryCode, isVisited, onCountryLongPress]);
+
+  // Handle pointer down for long press (works for both touch and mouse)
+  const handlePointerDown = useCallback((feat: object) => {
+    const code = getCountryCode(feat as CountryFeature);
+    if (!code || !isVisited(code)) return;
+
+    longPressFiredRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressFiredRef.current = true;
+      if (onCountryLongPress) {
+        onCountryLongPress(code);
+      }
+    }, 500);
+  }, [getCountryCode, isVisited, onCountryLongPress]);
+
+  // Handle pointer up to cancel long press
+  const handlePointerUp = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
 
   // Get color for country
   const getColor = useCallback((feat: object): string => {
@@ -212,6 +287,7 @@ export default function Globe({
           polygonAltitude={getAltitude}
           polygonLabel={getLabel}
           onPolygonClick={handleClick}
+          onPolygonRightClick={handleRightClick}
           atmosphereColor="#6366f1"
           atmosphereAltitude={0.2}
           onGlobeReady={handleGlobeReady}

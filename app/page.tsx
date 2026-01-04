@@ -3,12 +3,14 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
-import { useVisitedCountries } from "@/hooks/useVisitedCountries";
+import { useVisits } from "@/hooks/useVisits";
 import CountryList from "@/components/CountryList";
 import Stats from "@/components/Stats";
 import UserMenu from "@/components/UserMenu";
 import SyncStatus from "@/components/SyncStatus";
 import OnboardingModal from "@/components/OnboardingModal";
+import StatsDrawer from "@/components/StatsDrawer";
+import VisitDetailModal from "@/components/VisitDetailModal";
 
 const FlatMap = dynamic(() => import("@/components/FlatMap"), {
   ssr: false,
@@ -31,8 +33,36 @@ const Globe = dynamic(() => import("@/components/Globe"), {
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"flat" | "globe">("flat");
-  const { visitedCountries, toggleCountry, isVisited, stats, isLoaded, syncStatus, showOnboarding, dismissOnboarding } =
-    useVisitedCountries();
+  const [statsDrawerOpen, setStatsDrawerOpen] = useState(false);
+  const [visitModalOpen, setVisitModalOpen] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+
+  const {
+    visitedCountries,
+    visits,
+    toggleVisit,
+    updateVisit,
+    deleteVisit,
+    isVisited,
+    getVisit,
+    stats,
+    legacyStats,
+    isLoaded,
+    syncStatus,
+    showOnboarding,
+    dismissOnboarding,
+  } = useVisits();
+
+  // Handle opening visit detail modal
+  const handleOpenVisitDetail = (locationId: string) => {
+    setSelectedLocationId(locationId);
+    setVisitModalOpen(true);
+  };
+
+  // Handle map country click - toggle visit
+  const handleMapCountryClick = (countryId: string) => {
+    toggleVisit(countryId);
+  };
 
   if (!isLoaded) {
     return (
@@ -51,7 +81,7 @@ export default function Home() {
             <h1 className="text-lg font-semibold text-slate-800">Travel Map</h1>
             <SyncStatus status={syncStatus} />
           </div>
-          <p className="text-xs text-slate-500">{stats.count} countries visited</p>
+          <p className="text-xs text-slate-500">{legacyStats.count} countries visited</p>
         </div>
         <div className="flex items-center gap-2">
           <UserMenu />
@@ -82,13 +112,18 @@ export default function Home() {
             <UserMenu />
           </div>
           <div className="p-4 border-b border-slate-200">
-            <Stats stats={stats} />
+            <Stats
+              stats={legacyStats}
+              onViewDetails={() => setStatsDrawerOpen(true)}
+            />
           </div>
           <div className="flex-1 overflow-hidden">
             <CountryList
               visitedCountries={visitedCountries}
-              onToggleCountry={toggleCountry}
+              onToggleCountry={toggleVisit}
               isVisited={isVisited}
+              onCountryLongPress={handleOpenVisitDetail}
+              visits={visits}
             />
           </div>
         </div>
@@ -103,7 +138,8 @@ export default function Home() {
           >
             <Globe
               visitedCountries={visitedCountries}
-              onCountryClick={toggleCountry}
+              onCountryClick={handleMapCountryClick}
+              onCountryLongPress={handleOpenVisitDetail}
               isVisited={isVisited}
             />
           </div>
@@ -115,7 +151,8 @@ export default function Home() {
             }`}
           >
             <FlatMap
-              onCountryClick={toggleCountry}
+              onCountryClick={handleMapCountryClick}
+              onCountryLongPress={handleOpenVisitDetail}
               isVisited={isVisited}
             />
           </div>
@@ -147,10 +184,7 @@ export default function Home() {
           <div className={`absolute bottom-4 left-4 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md text-sm ${
             viewMode === "globe" ? "bg-black/50 text-white/80" : "bg-white/90 text-slate-600"
           }`}>
-            {viewMode === "flat"
-              ? "Click countries to mark as visited • Scroll to zoom • Drag to pan"
-              : "Click countries to mark as visited • Drag to rotate • Scroll to zoom"
-            }
+            Click to mark visited - Right-click for details
           </div>
         </div>
       </div>
@@ -167,7 +201,8 @@ export default function Home() {
           >
             <Globe
               visitedCountries={visitedCountries}
-              onCountryClick={toggleCountry}
+              onCountryClick={handleMapCountryClick}
+              onCountryLongPress={handleOpenVisitDetail}
               isVisited={isVisited}
             />
           </div>
@@ -179,7 +214,8 @@ export default function Home() {
             }`}
           >
             <FlatMap
-              onCountryClick={toggleCountry}
+              onCountryClick={handleMapCountryClick}
+              onCountryLongPress={handleOpenVisitDetail}
               isVisited={isVisited}
             />
           </div>
@@ -211,10 +247,7 @@ export default function Home() {
           <div className={`absolute bottom-4 left-4 right-4 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md text-xs text-center ${
             viewMode === "globe" ? "bg-black/50 text-white/80" : "bg-white/90 text-slate-600"
           }`}>
-            {viewMode === "flat"
-              ? "Tap countries to mark visited • Pinch to zoom • Drag to pan"
-              : "Tap countries to mark visited • Drag to rotate • Pinch to zoom"
-            }
+            Tap to mark visited - Long press for details
           </div>
         </div>
       </div>
@@ -255,21 +288,51 @@ export default function Home() {
 
               {/* Stats */}
               <div className="p-4 border-b border-slate-200">
-                <Stats stats={stats} />
+                <Stats
+                  stats={legacyStats}
+                  onViewDetails={() => {
+                    setSidebarOpen(false);
+                    setStatsDrawerOpen(true);
+                  }}
+                />
               </div>
 
               {/* Country List */}
               <div className="flex-1 overflow-hidden">
                 <CountryList
                   visitedCountries={visitedCountries}
-                  onToggleCountry={toggleCountry}
+                  onToggleCountry={toggleVisit}
                   isVisited={isVisited}
+                  onCountryLongPress={handleOpenVisitDetail}
+                  visits={visits}
                 />
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
+      {/* Stats Drawer */}
+      <StatsDrawer
+        isOpen={statsDrawerOpen}
+        onClose={() => setStatsDrawerOpen(false)}
+        stats={stats}
+      />
+
+      {/* Visit Detail Modal */}
+      {selectedLocationId && (
+        <VisitDetailModal
+          locationId={selectedLocationId}
+          visit={getVisit(selectedLocationId)}
+          isOpen={visitModalOpen}
+          onClose={() => {
+            setVisitModalOpen(false);
+            setSelectedLocationId(null);
+          }}
+          onSave={updateVisit}
+          onDelete={deleteVisit}
+        />
+      )}
 
       {/* Onboarding Modal for first-time users */}
       {showOnboarding && (

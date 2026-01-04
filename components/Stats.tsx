@@ -1,13 +1,19 @@
 "use client";
 
-import type { VisitedCountriesStats } from "@/hooks/useVisitedCountries";
-import { TOTAL_COUNTRIES } from "@/lib/countries";
+import { TOTAL_COUNTRIES } from "@/lib/locations";
 
-interface StatsProps {
-  stats: VisitedCountriesStats;
+interface LegacyStats {
+  count: number;
+  percentage: number;
+  byContinent?: Record<string, { visited: number; total: number }>;
 }
 
-export default function Stats({ stats }: StatsProps) {
+interface StatsProps {
+  stats: LegacyStats;
+  onViewDetails?: () => void;
+}
+
+export default function Stats({ stats, onViewDetails }: StatsProps) {
   return (
     <div className="space-y-3">
       {/* Main stat */}
@@ -24,8 +30,22 @@ export default function Stats({ stats }: StatsProps) {
         />
       </div>
 
-      <div className="text-sm text-slate-500">
-        {stats.percentage}% of the world explored
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-slate-500">
+          {stats.percentage}% of the world explored
+        </span>
+
+        {onViewDetails && (
+          <button
+            onClick={onViewDetails}
+            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 transition-colors"
+          >
+            View Details
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   );
