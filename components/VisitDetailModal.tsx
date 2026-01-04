@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getLocationById, type Location } from "@/lib/locations";
 import type { Visit, VisitInput, PlaceVisited, VisitDate } from "@/lib/types";
+import PhotoUploader from "./PhotoUploader";
 
 interface VisitDetailModalProps {
   locationId: string;
@@ -12,6 +13,7 @@ interface VisitDetailModalProps {
   onClose: () => void;
   onSave: (locationId: string, updates: VisitInput) => void;
   onDelete?: (locationId: string) => void;
+  userId?: string;
 }
 
 export default function VisitDetailModal({
@@ -21,6 +23,7 @@ export default function VisitDetailModal({
   onClose,
   onSave,
   onDelete,
+  userId,
 }: VisitDetailModalProps) {
   const location = getLocationById(locationId);
 
@@ -29,6 +32,7 @@ export default function VisitDetailModal({
   const [notes, setNotes] = useState(visit?.notes || "");
   const [visitDates, setVisitDates] = useState<VisitDate[]>(visit?.visitDates || []);
   const [placesVisited, setPlacesVisited] = useState<PlaceVisited[]>(visit?.placesVisited || []);
+  const [photos, setPhotos] = useState<string[]>(visit?.photos || []);
   const [newPlace, setNewPlace] = useState("");
   const [newPlaceType, setNewPlaceType] = useState<PlaceVisited["type"]>("city");
   const [newDateStart, setNewDateStart] = useState("");
@@ -41,6 +45,7 @@ export default function VisitDetailModal({
       setNotes(visit?.notes || "");
       setVisitDates(visit?.visitDates || []);
       setPlacesVisited(visit?.placesVisited || []);
+      setPhotos(visit?.photos || []);
       setNewPlace("");
       setNewDateStart("");
       setNewDateEnd("");
@@ -54,7 +59,7 @@ export default function VisitDetailModal({
       notes: notes || undefined,
       visitDates,
       placesVisited,
-      photos: visit?.photos || [],
+      photos,
     });
     onClose();
   };
@@ -302,17 +307,26 @@ export default function VisitDetailModal({
                 </div>
               </div>
 
-              {/* Photos placeholder */}
+              {/* Photos */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Photos
                 </label>
-                <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center">
-                  <svg className="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <p className="text-sm text-slate-400">Photo upload coming soon</p>
-                </div>
+                {userId ? (
+                  <PhotoUploader
+                    photos={photos}
+                    userId={userId}
+                    locationId={locationId}
+                    onPhotosChange={setPhotos}
+                  />
+                ) : (
+                  <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center">
+                    <svg className="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-sm text-slate-400">Sign in to upload photos</p>
+                  </div>
+                )}
               </div>
             </div>
 

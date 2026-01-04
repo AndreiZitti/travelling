@@ -21,6 +21,7 @@ import type {
   SyncStatus,
 } from "@/lib/types";
 import { rowToVisit, visitToRow } from "@/lib/types";
+import { deleteAllPhotosForLocation } from "@/lib/supabase/storage";
 import type { User } from "@supabase/supabase-js";
 
 const STORAGE_KEY = "visits-cache";
@@ -347,6 +348,13 @@ export function useVisits() {
 
   // Delete visit
   const deleteVisit = useCallback((locationId: string) => {
+    // Delete photos from storage if user is logged in
+    if (user) {
+      deleteAllPhotosForLocation(user.id, locationId).catch((error) => {
+        console.error("Failed to delete photos:", error);
+      });
+    }
+
     setVisits((prev) => {
       const next = new Map(prev);
       next.delete(locationId);
@@ -354,7 +362,7 @@ export function useVisits() {
       scheduleSyncToSupabase("delete", { locationId });
       return next;
     });
-  }, [saveToLocalStorage, scheduleSyncToSupabase]);
+  }, [user, saveToLocalStorage, scheduleSyncToSupabase]);
 
   // Clear all visits
   const clearAll = useCallback(() => {

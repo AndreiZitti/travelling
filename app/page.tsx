@@ -51,6 +51,7 @@ export default function Home() {
     syncStatus,
     showOnboarding,
     dismissOnboarding,
+    user,
   } = useVisits();
 
   // Handle opening visit detail modal
@@ -331,6 +332,7 @@ export default function Home() {
           }}
           onSave={updateVisit}
           onDelete={deleteVisit}
+          userId={user?.id}
         />
       )}
 
