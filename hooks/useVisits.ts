@@ -43,9 +43,11 @@ export function useVisits() {
   const pendingSyncRef = useRef<{ action: "upsert" | "delete"; visit: Partial<Visit> & { locationId: string } } | null>(null);
 
   // Track current user ID to prevent unnecessary state updates
-  const currentUserIdRef = useRef<string | null>(null);
+  // Use undefined as sentinel to distinguish "never checked" from "checked and found no user (null)"
+  const currentUserIdRef = useRef<string | null | undefined>(undefined);
   const authInitializedRef = useRef(false);
-  const visitsLoadedForUserRef = useRef<string | null>(null);
+  // Use undefined as sentinel to distinguish "never loaded" from "loaded for anonymous user (null)"
+  const visitsLoadedForUserRef = useRef<string | null | undefined>(undefined);
 
   // Get current user
   useEffect(() => {
@@ -53,8 +55,12 @@ export function useVisits() {
     if (authInitializedRef.current) return;
     authInitializedRef.current = true;
 
+    console.log("[DEBUG] Auth init starting, Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+
     const initAuth = async () => {
+      console.log("[DEBUG] Calling supabase.auth.getUser()...");
       const { data: { user: fetchedUser } } = await supabase.auth.getUser();
+      console.log("[DEBUG] getUser returned:", fetchedUser?.id ?? "no user");
       const userId = fetchedUser?.id ?? null;
 
       // Only update if different from current
@@ -101,10 +107,14 @@ export function useVisits() {
   useEffect(() => {
     const currentUserId = user?.id ?? null;
 
+    console.log("[DEBUG] Visits effect: user=", currentUserId, "loadedFor=", visitsLoadedForUserRef.current);
+
     // Skip if we've already loaded for this user (or null user)
     if (visitsLoadedForUserRef.current === currentUserId) {
+      console.log("[DEBUG] Skipping - already loaded for this user");
       return;
     }
+    console.log("[DEBUG] Proceeding to load visits...");
 
     const loadFromLocalStorage = () => {
       try {
@@ -170,6 +180,7 @@ export function useVisits() {
       } else {
         loadFromLocalStorage();
       }
+      console.log("[DEBUG] Setting isLoaded to true");
       setIsLoaded(true);
     };
 
