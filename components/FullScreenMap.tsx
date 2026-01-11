@@ -7,8 +7,8 @@ import dynamic from "next/dynamic";
 const FlatMap = dynamic(() => import("@/components/FlatMap"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-[#e8f4fc]">
-      <div className="text-slate-400">Loading map...</div>
+    <div className="w-full h-full flex items-center justify-center bg-black">
+      <div className="text-been-muted">Loading map...</div>
     </div>
   ),
 });
@@ -103,7 +103,7 @@ export default function FullScreenMap({
     }
   };
 
-  // Dummy click handler (viewOnly mode prevents actual clicks)
+  // Dummy click handler (map is for viewing)
   const handleCountryClick = () => {};
 
   if (!isOpen) return null;
@@ -119,26 +119,27 @@ export default function FullScreenMap({
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={0.2}
         onDragEnd={handleDragEnd}
-        className="fixed inset-0 z-50 bg-[#e8f4fc]"
+        className="fixed inset-0 z-50 bg-black"
         style={{ touchAction: "pan-x" }}
       >
-        {/* Map */}
+        {/* Map - Interactive (zoom/pan enabled, no staticMode) */}
         <div className="w-full h-full">
           <FlatMap
             onCountryClick={handleCountryClick}
             onCountryLongPress={onCountryLongPress}
             isVisited={isVisited}
             viewOnly={true}
+            darkMode={true}
           />
         </div>
 
         {/* Close button */}
         <button
           onClick={exitFullscreen}
-          className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg z-10 active:scale-95 transition-transform"
+          className="absolute top-4 right-4 p-3 bg-been-card/90 backdrop-blur-sm rounded-full shadow-lg z-10 active:scale-95 transition-transform"
         >
           <svg
-            className="w-6 h-6 text-slate-600"
+            className="w-6 h-6 text-been-text"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -153,13 +154,13 @@ export default function FullScreenMap({
         </button>
 
         {/* Hint text */}
-        <div className="absolute bottom-6 left-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-2.5 rounded-xl shadow-lg text-sm text-center font-medium text-slate-700">
-          Long press visited countries for details
+        <div className="absolute bottom-6 left-4 right-4 bg-been-card/90 backdrop-blur-sm px-4 py-2.5 rounded-xl shadow-lg text-sm text-center font-medium text-been-text">
+          Pinch to zoom • Drag to pan • Long press for details
         </div>
 
         {/* Swipe indicator */}
         <div className="absolute top-2 left-1/2 -translate-x-1/2">
-          <div className="w-10 h-1 bg-slate-300 rounded-full" />
+          <div className="w-10 h-1 bg-been-muted rounded-full" />
         </div>
       </motion.div>
     </AnimatePresence>

@@ -18,10 +18,13 @@ export interface VisitDate {
   endDate?: string; // ISO date string, optional for single-day visits
 }
 
+export type VisitType = 'visited' | 'wishlist';
+
 export interface Visit {
   id: string; // UUID
   userId: string;
   locationId: string; // Reference to Location.id
+  type: VisitType; // 'visited' or 'wishlist'
   rating?: number; // 1-5 stars
   notes?: string;
   visitDates: VisitDate[];
@@ -79,6 +82,7 @@ export interface VisitRow {
   id: string;
   user_id: string;
   location_id: string;
+  type: VisitType;
   rating: number | null;
   notes: string | null;
   visit_dates: VisitDate[] | null;
@@ -94,6 +98,7 @@ export function rowToVisit(row: VisitRow): Visit {
     id: row.id,
     userId: row.user_id,
     locationId: row.location_id,
+    type: row.type || 'visited',
     rating: row.rating ?? undefined,
     notes: row.notes ?? undefined,
     visitDates: row.visit_dates ?? [],
@@ -105,10 +110,11 @@ export function rowToVisit(row: VisitRow): Visit {
 }
 
 // Convert Visit to database row format
-export function visitToRow(visit: Partial<Visit> & { locationId: string }, userId: string): Partial<VisitRow> {
+export function visitToRow(visit: Partial<Visit> & { locationId: string; type?: VisitType }, userId: string): Partial<VisitRow> {
   return {
     user_id: userId,
     location_id: visit.locationId,
+    type: visit.type || 'visited',
     rating: visit.rating ?? null,
     notes: visit.notes ?? null,
     visit_dates: visit.visitDates ?? null,

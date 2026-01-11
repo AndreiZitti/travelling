@@ -25,11 +25,13 @@ import { deleteAllPhotosForLocation } from "@/lib/supabase/storage";
 import type { User } from "@supabase/supabase-js";
 
 const STORAGE_KEY = "visits-cache";
+const WISHLIST_STORAGE_KEY = "wishlist-cache";
 const ONBOARDING_KEY = "has-seen-onboarding";
 const SYNC_DEBOUNCE_MS = 1500;
 
 export function useVisits() {
   const [visits, setVisits] = useState<Map<string, Visit>>(new Map());
+  const [wishlist, setWishlist] = useState<Map<string, Visit>>(new Map());
   const [isLoaded, setIsLoaded] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
@@ -129,6 +131,7 @@ export function useVisits() {
                 id: `local-${locationId}`,
                 userId: "local",
                 locationId,
+                type: 'visited',
                 visitDates: [],
                 placesVisited: [],
                 photos: [],
@@ -147,6 +150,23 @@ export function useVisits() {
       } catch (e) {
         console.error("Failed to load from localStorage:", e);
       }
+
+      // Load wishlist from localStorage
+      try {
+        const wishlistStored = localStorage.getItem(WISHLIST_STORAGE_KEY);
+        if (wishlistStored) {
+          const parsed = JSON.parse(wishlistStored);
+          const wishlistMap = new Map<string, Visit>();
+          if (typeof parsed === "object") {
+            Object.entries(parsed).forEach(([locationId, item]) => {
+              wishlistMap.set(locationId, item as Visit);
+            });
+          }
+          setWishlist(wishlistMap);
+        }
+      } catch (e) {
+        console.error("Failed to load wishlist from localStorage:", e);
+      }
     };
 
     const loadVisits = async () => {
@@ -155,6 +175,7 @@ export function useVisits() {
 
       if (user) {
         try {
+          // Load all entries (both visited and wishlist)
           const { data, error } = await supabase
             .from('visits')
             .select('*')
@@ -165,13 +186,22 @@ export function useVisits() {
             loadFromLocalStorage();
           } else if (data) {
             const visitsMap = new Map<string, Visit>();
+            const wishlistMap = new Map<string, Visit>();
+
             (data as VisitRow[]).forEach((row) => {
               const visit = rowToVisit(row);
-              visitsMap.set(visit.locationId, visit);
+              if (visit.type === 'wishlist') {
+                wishlistMap.set(visit.locationId, visit);
+              } else {
+                visitsMap.set(visit.locationId, visit);
+              }
             });
+
             setVisits(visitsMap);
+            setWishlist(wishlistMap);
             // Cache to localStorage
             saveToLocalStorage(visitsMap);
+            saveWishlistToLocalStorage(wishlistMap);
           }
         } catch (e) {
           console.error("Failed to load visits:", e);
@@ -201,14 +231,28 @@ export function useVisits() {
     }
   }, []);
 
+  // Save wishlist to localStorage
+  const saveWishlistToLocalStorage = useCallback((wishlistMap: Map<string, Visit>) => {
+    try {
+      const obj: Record<string, Visit> = {};
+      wishlistMap.forEach((item, locationId) => {
+        obj[locationId] = item;
+      });
+      localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(obj));
+    } catch (e) {
+      console.error("Failed to save wishlist to localStorage:", e);
+    }
+  }, []);
+
   // Sync to Supabase
   const syncToSupabase = useCallback(async (
     action: "upsert" | "delete",
-    visitData: Partial<Visit> & { locationId: string }
+    visitData: Partial<Visit> & { locationId: string; type?: 'visited' | 'wishlist' }
   ) => {
     if (!user) return;
 
     setSyncStatus("saving");
+    const visitType = visitData.type || 'visited';
 
     try {
       if (action === "upsert") {
@@ -219,7 +263,7 @@ export function useVisits() {
             ...row,
             updated_at: new Date().toISOString(),
           }, {
-            onConflict: 'user_id,location_id'
+            onConflict: 'user_id,location_id,type'
           });
 
         if (error) throw error;
@@ -228,7 +272,8 @@ export function useVisits() {
           .from('visits')
           .delete()
           .eq('user_id', user.id)
-          .eq('location_id', visitData.locationId);
+          .eq('location_id', visitData.locationId)
+          .eq('type', visitType);
 
         if (error) throw error;
       }
@@ -244,7 +289,7 @@ export function useVisits() {
   // Debounced sync
   const scheduleSyncToSupabase = useCallback((
     action: "upsert" | "delete",
-    visitData: Partial<Visit> & { locationId: string }
+    visitData: Partial<Visit> & { locationId: string; type?: 'visited' | 'wishlist' }
   ) => {
     if (!user) return;
 
@@ -292,12 +337,13 @@ export function useVisits() {
       if (next.has(locationId)) {
         next.delete(locationId);
         saveToLocalStorage(next);
-        scheduleSyncToSupabase("delete", { locationId });
+        scheduleSyncToSupabase("delete", { locationId, type: 'visited' });
       } else {
         const newVisit: Visit = {
           id: `local-${Date.now()}`,
           userId: user?.id || "local",
           locationId,
+          type: 'visited',
           visitDates: [],
           placesVisited: [],
           photos: [],
@@ -315,6 +361,7 @@ export function useVisits() {
             id: `local-${Date.now()}-parent`,
             userId: user?.id || "local",
             locationId: location.parentId,
+            type: 'visited',
             visitDates: [],
             placesVisited: [],
             photos: [],
@@ -340,6 +387,7 @@ export function useVisits() {
         id: existing?.id || `local-${Date.now()}`,
         userId: user?.id || "local",
         locationId,
+        type: 'visited',
         rating: updates.rating,
         notes: updates.notes,
         visitDates: updates.visitDates || existing?.visitDates || [],
@@ -370,7 +418,7 @@ export function useVisits() {
       const next = new Map(prev);
       next.delete(locationId);
       saveToLocalStorage(next);
-      scheduleSyncToSupabase("delete", { locationId });
+      scheduleSyncToSupabase("delete", { locationId, type: 'visited' });
       return next;
     });
   }, [user, saveToLocalStorage, scheduleSyncToSupabase]);
@@ -381,6 +429,105 @@ export function useVisits() {
     localStorage.removeItem(STORAGE_KEY);
     // Note: This would need batch delete for Supabase
   }, []);
+
+  // ============================================================================
+  // WISHLIST FUNCTIONS
+  // ============================================================================
+
+  // Check if location is on wishlist
+  const isWishlisted = useCallback((locationId: string): boolean => {
+    return wishlist.has(locationId);
+  }, [wishlist]);
+
+  // Get wishlist item for a location
+  const getWishlistItem = useCallback((locationId: string): Visit | undefined => {
+    return wishlist.get(locationId);
+  }, [wishlist]);
+
+  // Toggle wishlist status
+  const toggleWishlist = useCallback((locationId: string) => {
+    setWishlist((prev) => {
+      const next = new Map(prev);
+
+      if (next.has(locationId)) {
+        next.delete(locationId);
+        saveWishlistToLocalStorage(next);
+        scheduleSyncToSupabase("delete", { locationId, type: 'wishlist' });
+      } else {
+        const newItem: Visit = {
+          id: `wishlist-${Date.now()}`,
+          userId: user?.id || "local",
+          locationId,
+          type: 'wishlist',
+          visitDates: [],
+          placesVisited: [],
+          photos: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        next.set(locationId, newItem);
+        saveWishlistToLocalStorage(next);
+        scheduleSyncToSupabase("upsert", newItem);
+      }
+
+      return next;
+    });
+  }, [user, saveWishlistToLocalStorage, scheduleSyncToSupabase]);
+
+  // Update wishlist item with details
+  const updateWishlistItem = useCallback((locationId: string, updates: VisitInput) => {
+    setWishlist((prev) => {
+      const next = new Map(prev);
+      const existing = next.get(locationId);
+
+      const updatedItem: Visit = {
+        id: existing?.id || `wishlist-${Date.now()}`,
+        userId: user?.id || "local",
+        locationId,
+        type: 'wishlist',
+        rating: updates.rating,
+        notes: updates.notes,
+        visitDates: updates.visitDates || existing?.visitDates || [],
+        placesVisited: updates.placesVisited || existing?.placesVisited || [],
+        photos: updates.photos || existing?.photos || [],
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      next.set(locationId, updatedItem);
+      saveWishlistToLocalStorage(next);
+      scheduleSyncToSupabase("upsert", updatedItem);
+
+      return next;
+    });
+  }, [user, saveWishlistToLocalStorage, scheduleSyncToSupabase]);
+
+  // Delete wishlist item
+  const deleteWishlistItem = useCallback((locationId: string) => {
+    setWishlist((prev) => {
+      const next = new Map(prev);
+      next.delete(locationId);
+      saveWishlistToLocalStorage(next);
+      scheduleSyncToSupabase("delete", { locationId, type: 'wishlist' });
+      return next;
+    });
+  }, [saveWishlistToLocalStorage, scheduleSyncToSupabase]);
+
+  // Get wishlisted countries set (for map components)
+  const wishlistCountries = useMemo(() => {
+    const set = new Set<string>();
+    wishlist.forEach((_, locationId) => {
+      const location = ALL_LOCATIONS.find(l => l.id === locationId);
+      if (location) {
+        if (location.type === "country") {
+          set.add(locationId);
+        } else if (location.parentId) {
+          set.add(location.parentId);
+        }
+      }
+    });
+    return set;
+  }, [wishlist]);
 
   // Get visited countries set (for backward compatibility with map components)
   const visitedCountries = useMemo(() => {
@@ -497,6 +644,25 @@ export function useVisits() {
     ) as Record<Continent, { visited: number; total: number }>,
   }), [stats]);
 
+  // Calculate wishlist stats
+  const wishlistStats = useMemo(() => {
+    const wishlistLocations = Array.from(wishlist.values());
+    const wishlistCountryIds = new Set<string>();
+
+    wishlistLocations.forEach((item) => {
+      const location = ALL_LOCATIONS.find(l => l.id === item.locationId);
+      if (location?.type === "country") {
+        wishlistCountryIds.add(item.locationId);
+      }
+    });
+
+    return {
+      totalCountries: COUNTRIES.length,
+      wishlistCountries: wishlistCountryIds.size,
+      percentageCountries: Math.round((wishlistCountryIds.size / COUNTRIES.length) * 100),
+    };
+  }, [wishlist]);
+
   return {
     // Visit data
     visits,
@@ -516,6 +682,22 @@ export function useVisits() {
     // Stats
     stats,
     legacyStats, // For backward compatibility with Stats component
+
+    // Wishlist data
+    wishlist,
+    wishlistCountries, // Set for map compatibility
+
+    // Wishlist actions
+    toggleWishlist,
+    updateWishlistItem,
+    deleteWishlistItem,
+
+    // Wishlist queries
+    isWishlisted,
+    getWishlistItem,
+
+    // Wishlist stats
+    wishlistStats,
 
     // State
     isLoaded,

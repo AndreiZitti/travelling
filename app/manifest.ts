@@ -2,13 +2,13 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Travel Map",
-    short_name: "Travel Map",
-    description: "Track the countries you've visited",
+    name: "Zeen",
+    short_name: "Zeen",
+    description: "Track the countries you've zeen",
     start_url: "/",
     display: "standalone",
-    background_color: "#f1f5f9",
-    theme_color: "#6366f1",
+    background_color: "#000000",
+    theme_color: "#F5A623",
     orientation: "portrait",
     icons: [
       {

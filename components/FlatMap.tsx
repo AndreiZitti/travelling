@@ -11,8 +11,11 @@ interface FlatMapProps {
   onCountryClick: (countryId: string) => void;
   onCountryLongPress?: (countryId: string) => void;
   isVisited: (countryId: string) => boolean;
+  isWishlisted?: (countryId: string) => boolean;
   viewOnly?: boolean;
   darkMode?: boolean;
+  staticMode?: boolean;
+  showWishlist?: boolean; // When true, shows wishlist colors instead of visited
 }
 
 interface CountryProperties {
@@ -132,27 +135,59 @@ export default function FlatMap({
   onCountryClick,
   onCountryLongPress,
   isVisited,
+  isWishlisted,
   viewOnly = false,
   darkMode = false,
+  staticMode = false,
+  showWishlist = false,
 }: FlatMapProps) {
   // Colors based on mode - memoized to avoid re-renders
-  const colors = useMemo(() => darkMode
-    ? {
-        ocean: "#000000",
-        visited: "#F5A623",
-        visitedHover: "#D4890F",
-        unvisited: "#2d2d44",
-        unvisitedHover: "#3d3d54",
-        stroke: "#1C1C1E",
-      }
-    : {
-        ocean: "#e8f4fc",
-        visited: "#6366f1",
-        visitedHover: "#4f46e5",
-        unvisited: "#d1d5db",
-        unvisitedHover: "#9ca3af",
-        stroke: "#ffffff",
-      }, [darkMode]);
+  const colors = useMemo(() => {
+    if (darkMode) {
+      return showWishlist
+        ? {
+            ocean: "#000000",
+            highlighted: "#3B82F6", // Blue for wishlist
+            highlightedHover: "#2563EB",
+            unvisited: "#2d2d44",
+            unvisitedHover: "#3d3d54",
+            stroke: "#1C1C1E",
+          }
+        : {
+            ocean: "#000000",
+            highlighted: "#F5A623", // Orange for visited
+            highlightedHover: "#D4890F",
+            unvisited: "#2d2d44",
+            unvisitedHover: "#3d3d54",
+            stroke: "#1C1C1E",
+          };
+    }
+    return showWishlist
+      ? {
+          ocean: "#e8f4fc",
+          highlighted: "#3B82F6", // Blue for wishlist
+          highlightedHover: "#2563EB",
+          unvisited: "#d1d5db",
+          unvisitedHover: "#9ca3af",
+          stroke: "#ffffff",
+        }
+      : {
+          ocean: "#e8f4fc",
+          highlighted: "#6366f1", // Purple for visited
+          highlightedHover: "#4f46e5",
+          unvisited: "#d1d5db",
+          unvisitedHover: "#9ca3af",
+          stroke: "#ffffff",
+        };
+  }, [darkMode, showWishlist]);
+
+  // Determine which check function to use
+  const isHighlighted = useCallback((countryId: string): boolean => {
+    if (showWishlist && isWishlisted) {
+      return isWishlisted(countryId);
+    }
+    return isVisited(countryId);
+  }, [showWishlist, isWishlisted, isVisited]);
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<{
@@ -195,19 +230,21 @@ export default function FlatMap({
     return location?.id || "";
   }, []);
 
-  // Store refs for isVisited and onCountryClick to avoid re-renders
+  // Store refs for isVisited, isHighlighted and onCountryClick to avoid re-renders
   const isVisitedRef = useRef(isVisited);
+  const isHighlightedRef = useRef(isHighlighted);
   const onCountryClickRef = useRef(onCountryClick);
   const viewOnlyRef = useRef(viewOnly);
 
   // Update refs when props change
   useEffect(() => {
     isVisitedRef.current = isVisited;
+    isHighlightedRef.current = isHighlighted;
     onCountryClickRef.current = onCountryClick;
     viewOnlyRef.current = viewOnly;
-  }, [isVisited, onCountryClick, viewOnly]);
+  }, [isVisited, isHighlighted, onCountryClick, viewOnly]);
 
-  // Update country colors when visited status changes (without re-rendering map)
+  // Update country colors when visited/wishlist status changes (without re-rendering map)
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -216,11 +253,11 @@ export default function FlatMap({
       const el = d3.select(this);
       const countryCode = el.attr("data-country-code");
       if (countryCode) {
-        const visited = isVisited(countryCode);
-        el.attr("fill", visited ? colors.visited : colors.unvisited);
+        const highlighted = isHighlighted(countryCode);
+        el.attr("fill", highlighted ? colors.highlighted : colors.unvisited);
       }
     });
-  }, [isVisited, colors.visited, colors.unvisited]);
+  }, [isHighlighted, colors.highlighted, colors.unvisited]);
 
   // Render map (only on dimension changes)
   useEffect(() => {
@@ -237,20 +274,22 @@ export default function FlatMap({
 
     const pathGenerator = geoPath().projection(projection);
 
-    // Create zoom behavior (50m map supports higher zoom)
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([1, 20])
-      .filter((event) => {
-        // Allow all touch events and mouse events except right-click
-        return !event.ctrlKey && event.type !== "contextmenu";
-      })
-      .on("zoom", (event) => {
-        // Use transform directly without transition for smooth panning
-        g.attr("transform", event.transform);
-      });
+    // Create zoom behavior (50m map supports higher zoom) - only if not static mode
+    if (!staticMode) {
+      const zoom = d3.zoom<SVGSVGElement, unknown>()
+        .scaleExtent([1, 20])
+        .filter((event) => {
+          // Allow all touch events and mouse events except right-click
+          return !event.ctrlKey && event.type !== "contextmenu";
+        })
+        .on("zoom", (event) => {
+          // Use transform directly without transition for smooth panning
+          g.attr("transform", event.transform);
+        });
 
-    svg.call(zoom)
-      .on("dblclick.zoom", null); // Disable double-click zoom for cleaner mobile UX
+      svg.call(zoom)
+        .on("dblclick.zoom", null); // Disable double-click zoom for cleaner mobile UX
+    }
 
     // Create a group for the map
     const g = svg.append("g");
@@ -286,7 +325,7 @@ export default function FlatMap({
           .attr("fill", (d) => {
             const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
             const code = getCountryCode(name);
-            return code && isVisitedRef.current(code) ? colors.visited : colors.unvisited;
+            return code && isHighlightedRef.current(code) ? colors.highlighted : colors.unvisited;
           })
           .attr("stroke", colors.stroke)
           .attr("stroke-width", 0.5)
@@ -294,17 +333,17 @@ export default function FlatMap({
           .on("mouseover", function (event, d) {
             const name = COUNTRY_NAMES[normalizeId(d.id)] || "Unknown";
             const code = getCountryCode(name);
-            const visited = code ? isVisitedRef.current(code) : false;
+            const highlighted = code ? isHighlightedRef.current(code) : false;
 
             d3.select(this)
-              .attr("fill", visited ? colors.visitedHover : colors.unvisitedHover)
+              .attr("fill", highlighted ? colors.highlightedHover : colors.unvisitedHover)
               .attr("stroke-width", 1);
 
             setTooltip({
               x: event.pageX,
               y: event.pageY - 10,
               name,
-              visited,
+              visited: highlighted,
               visible: true,
             });
           })
@@ -318,10 +357,10 @@ export default function FlatMap({
           .on("mouseout", function (_, d) {
             const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
             const code = getCountryCode(name);
-            const visited = code && isVisitedRef.current(code);
+            const highlighted = code && isHighlightedRef.current(code);
 
             d3.select(this)
-              .attr("fill", visited ? colors.visited : colors.unvisited)
+              .attr("fill", highlighted ? colors.highlighted : colors.unvisited)
               .attr("stroke-width", 0.5);
 
             setTooltip((prev) => ({ ...prev, visible: false }));
@@ -344,7 +383,7 @@ export default function FlatMap({
             event.preventDefault();
             const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
             const code = getCountryCode(name);
-            if (code && isVisitedRef.current(code) && onCountryLongPressRef.current) {
+            if (code && isHighlightedRef.current(code) && onCountryLongPressRef.current) {
               onCountryLongPressRef.current(code);
             }
           })
@@ -352,7 +391,7 @@ export default function FlatMap({
           .on("touchstart", function (event, d) {
             const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
             const code = getCountryCode(name);
-            if (!code || !isVisitedRef.current(code)) return;
+            if (!code || !isHighlightedRef.current(code)) return;
 
             longPressFiredRef.current = false;
             longPressTimerRef.current = setTimeout(() => {
@@ -377,7 +416,7 @@ export default function FlatMap({
 
       })
       .catch((err) => console.error("Failed to load map:", err));
-  }, [dimensions, getCountryCode, colors]);
+  }, [dimensions, getCountryCode, colors, staticMode]);
 
   return (
     <div ref={containerRef} className="w-full h-full relative" style={{ backgroundColor: colors.ocean }}>

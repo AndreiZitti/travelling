@@ -3,12 +3,12 @@ import "./globals.css";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 export const metadata: Metadata = {
-  title: "Travel Map",
-  description: "Track the countries you've visited",
+  title: "Zeen",
+  description: "Track the countries you've zeen",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "Travel Map",
+    statusBarStyle: "black-translucent",
+    title: "Zeen",
   },
   formatDetection: {
     telephone: false,
@@ -20,7 +20,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#6366f1",
+  themeColor: "#F5A623",
 };
 
 export default function RootLayout({

@@ -16,6 +16,7 @@ import BottomNav, { TabType } from "@/components/BottomNav";
 import StatsSummaryCard from "@/components/StatsSummaryCard";
 import StatsModal from "@/components/StatsModal";
 import VisualizeTab from "@/components/VisualizeTab";
+import DiaryTab from "@/components/DiaryTab";
 
 const FlatMap = dynamic(() => import("@/components/FlatMap"), {
   ssr: false,
@@ -45,6 +46,8 @@ export default function Home() {
   const [fullMode, setFullMode] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("select");
   const [mobileStatsModalOpen, setMobileStatsModalOpen] = useState(false);
+  const [mobileCountryListOpen, setMobileCountryListOpen] = useState(false);
+  const [mapMode, setMapMode] = useState<"visited" | "wishlist">("visited");
 
   const {
     visitedCountries,
@@ -61,6 +64,15 @@ export default function Home() {
     showOnboarding,
     dismissOnboarding,
     user,
+    // Wishlist data
+    wishlist,
+    wishlistCountries,
+    toggleWishlist,
+    updateWishlistItem,
+    deleteWishlistItem,
+    isWishlisted,
+    getWishlistItem,
+    wishlistStats,
   } = useVisits();
 
   // Handle opening visit detail modal
@@ -69,10 +81,14 @@ export default function Home() {
     setVisitModalOpen(true);
   };
 
-  // Handle map country click - toggle visit (only if unlocked)
+  // Handle map country click - toggle visit or wishlist (only if unlocked)
   const handleMapCountryClick = (countryId: string) => {
     if (isLocked) return;
-    toggleVisit(countryId);
+    if (mapMode === "wishlist") {
+      toggleWishlist(countryId);
+    } else {
+      toggleVisit(countryId);
+    }
   };
 
   if (!isLoaded) {
@@ -87,19 +103,47 @@ export default function Home() {
     <main className="relative w-screen h-screen overflow-hidden bg-slate-100">
       {/* Mobile Header - Only show on Select tab */}
       {activeTab === "select" && (
-        <div className="md:hidden absolute top-0 left-0 right-0 z-20 bg-been-bg px-4 py-3 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-been-accent">Travel Map</h1>
-          <div className="flex items-center gap-2">
-            <SyncStatus status={syncStatus} />
-            <button className="p-2 rounded-lg hover:bg-been-card transition-colors">
-              <svg className="w-6 h-6 text-been-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
+        <div className="md:hidden absolute top-0 left-0 right-0 z-20 bg-been-bg px-4 py-2 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-been-accent">Zeen</h1>
+            <div className="flex items-center gap-2">
+              <SyncStatus status={syncStatus} />
+              <button className="p-2 rounded-lg hover:bg-been-card transition-colors">
+                <svg className="w-6 h-6 text-been-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setMobileCountryListOpen(true)}
+                className="p-2 rounded-lg hover:bg-been-card transition-colors"
+              >
+                <svg className="w-6 h-6 text-been-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          {/* Visited / Wishlist Toggle */}
+          <div className="flex bg-been-card rounded-lg p-1">
+            <button
+              onClick={() => setMapMode("visited")}
+              className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
+                mapMode === "visited"
+                  ? "bg-been-accent text-been-bg"
+                  : "text-been-muted hover:text-been-text"
+              }`}
+            >
+              Visited
             </button>
-            <button className="p-2 rounded-lg hover:bg-been-card transition-colors">
-              <svg className="w-6 h-6 text-been-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
+            <button
+              onClick={() => setMapMode("wishlist")}
+              className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
+                mapMode === "wishlist"
+                  ? "bg-blue-500 text-white"
+                  : "text-been-muted hover:text-been-text"
+              }`}
+            >
+              Wishlist
             </button>
           </div>
         </div>
@@ -220,9 +264,9 @@ export default function Home() {
       <div className="md:hidden w-full h-full bg-been-bg pb-16">
         {/* Select Tab */}
         {activeTab === "select" && (
-          <div className="w-full h-full pt-14 flex flex-col">
-            {/* Map Area */}
-            <div className="flex-1 relative min-h-0">
+          <div className="w-full h-full pt-24 flex flex-col">
+            {/* Map Area - larger height */}
+            <div className="relative" style={{ height: "50%" }}>
               {/* Globe View */}
               <div
                 className={`absolute inset-0 transition-opacity duration-500 ${
@@ -230,15 +274,15 @@ export default function Home() {
                 }`}
               >
                 <Globe
-                  visitedCountries={visitedCountries}
+                  visitedCountries={mapMode === "wishlist" ? wishlistCountries : visitedCountries}
                   onCountryClick={handleMapCountryClick}
                   onCountryLongPress={handleOpenVisitDetail}
-                  isVisited={isVisited}
+                  isVisited={mapMode === "wishlist" ? isWishlisted : isVisited}
                   darkMode
                 />
               </div>
 
-              {/* Flat Map View */}
+              {/* Flat Map View - Static (no zoom/pan) */}
               <div
                 className={`absolute inset-0 transition-opacity duration-500 ${
                   viewMode === "flat" ? "opacity-100" : "opacity-0 pointer-events-none"
@@ -248,9 +292,22 @@ export default function Home() {
                   onCountryClick={handleMapCountryClick}
                   onCountryLongPress={handleOpenVisitDetail}
                   isVisited={isVisited}
+                  isWishlisted={isWishlisted}
                   darkMode
+                  staticMode
+                  showWishlist={mapMode === "wishlist"}
                 />
               </div>
+
+              {/* Full view button overlay */}
+              <button
+                onClick={() => setFullMode(true)}
+                className="absolute top-3 right-3 p-2 rounded-lg bg-been-card/80 backdrop-blur-sm"
+              >
+                <svg className="w-5 h-5 text-been-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
 
               {/* Carousel dots */}
               <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
@@ -266,10 +323,6 @@ export default function Home() {
                     viewMode === "globe" ? "bg-been-accent" : "bg-been-muted"
                   }`}
                 />
-                <button
-                  onClick={() => setFullMode(true)}
-                  className="w-2 h-2 rounded-full bg-been-muted"
-                />
               </div>
             </div>
 
@@ -279,28 +332,77 @@ export default function Home() {
             {/* Stats Section */}
             <div className="p-4 space-y-3 overflow-y-auto dark-scroll">
               {/* Stats Summary Card */}
-              <StatsSummaryCard
-                percentage={stats.percentageCountries}
-                visited={stats.visitedCountries}
-                total={stats.totalCountries}
-                onTap={() => setMobileStatsModalOpen(true)}
-              />
+              {mapMode === "visited" ? (
+                <StatsSummaryCard
+                  percentage={stats.percentageCountries}
+                  visited={stats.visitedCountries}
+                  total={stats.totalCountries}
+                  onTap={() => setMobileStatsModalOpen(true)}
+                />
+              ) : (
+                <div
+                  onClick={() => setMobileStatsModalOpen(true)}
+                  className="bg-been-card rounded-2xl p-4 cursor-pointer"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-been-muted text-sm">Wishlist</p>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-3xl font-bold text-blue-500">
+                          {wishlistStats.wishlistCountries}
+                        </span>
+                        <span className="text-been-muted">
+                          / {wishlistStats.totalCountries}
+                        </span>
+                      </div>
+                      <p className="text-been-muted text-xs mt-1">Countries to visit</p>
+                    </div>
+                    <div className="w-16 h-16 relative">
+                      <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                        <circle
+                          cx="18" cy="18" r="15.9"
+                          fill="none"
+                          stroke="#2d2d44"
+                          strokeWidth="3"
+                        />
+                        <circle
+                          cx="18" cy="18" r="15.9"
+                          fill="none"
+                          stroke="#3B82F6"
+                          strokeWidth="3"
+                          strokeDasharray={`${wishlistStats.percentageCountries} 100`}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-blue-500">
+                        {wishlistStats.percentageCountries}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-              {/* My Countries Row */}
+              {/* My Countries/Wishlist Row */}
               <button
-                onClick={() => setActiveTab("explore")}
+                onClick={() => setActiveTab("diary")}
                 className="w-full bg-been-card rounded-2xl p-4 flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-been-accent/20 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-been-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    mapMode === "wishlist" ? "bg-blue-500/20" : "bg-been-accent/20"
+                  }`}>
+                    <svg className={`w-5 h-5 ${mapMode === "wishlist" ? "text-blue-500" : "text-been-accent"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
                       <circle cx="12" cy="10" r="3"/>
                     </svg>
                   </div>
                   <div className="text-left">
-                    <p className="text-been-text font-medium">My Countries</p>
-                    <p className="text-been-muted text-sm">and non-UN territories</p>
+                    <p className="text-been-text font-medium">
+                      {mapMode === "wishlist" ? "My Wishlist" : "My Countries"}
+                    </p>
+                    <p className="text-been-muted text-sm">
+                      {mapMode === "wishlist" ? "Places to visit" : "and non-UN territories"}
+                    </p>
                   </div>
                 </div>
                 <svg className="w-5 h-5 text-been-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -311,24 +413,13 @@ export default function Home() {
           </div>
         )}
 
-        {/* Explore Tab */}
-        {activeTab === "explore" && (
-          <div className="w-full h-full bg-been-bg flex flex-col">
-            <div className="p-4 border-b border-been-card">
-              <h1 className="text-2xl font-bold text-been-text">Explore</h1>
-              <p className="text-been-muted text-sm mt-1">Select countries you&apos;ve visited</p>
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <CountryList
-                visitedCountries={visitedCountries}
-                onToggleCountry={toggleVisit}
-                isVisited={isVisited}
-                onCountryLongPress={handleOpenVisitDetail}
-                visits={visits}
-                darkMode
-              />
-            </div>
-          </div>
+        {/* Diary Tab */}
+        {activeTab === "diary" && (
+          <DiaryTab
+            visits={mapMode === "wishlist" ? wishlist : visits}
+            onEntryTap={handleOpenVisitDetail}
+            isWishlist={mapMode === "wishlist"}
+          />
         )}
 
         {/* Visualize Tab */}
@@ -515,6 +606,53 @@ export default function Home() {
         onCountryLongPress={handleOpenVisitDetail}
         isVisited={isVisited}
       />
+
+      {/* Mobile Country List Modal - for adding countries */}
+      <AnimatePresence>
+        {mobileCountryListOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileCountryListOpen(false)}
+              className="md:hidden fixed inset-0 bg-black/50 z-50"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="md:hidden fixed inset-x-0 bottom-0 top-12 bg-been-bg z-50 rounded-t-3xl flex flex-col"
+            >
+              <div className="p-4 border-b border-been-card flex items-center justify-between">
+                <h2 className="text-xl font-bold text-been-text">Add Countries</h2>
+                <button
+                  onClick={() => setMobileCountryListOpen(false)}
+                  className="p-2 rounded-lg hover:bg-been-card transition-colors"
+                >
+                  <svg className="w-6 h-6 text-been-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <CountryList
+                  visitedCountries={visitedCountries}
+                  onToggleCountry={toggleVisit}
+                  isVisited={isVisited}
+                  onCountryLongPress={(locationId) => {
+                    setMobileCountryListOpen(false);
+                    handleOpenVisitDetail(locationId);
+                  }}
+                  visits={visits}
+                  darkMode
+                />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
