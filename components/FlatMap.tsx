@@ -11,6 +11,7 @@ interface FlatMapProps {
   onCountryClick: (countryId: string) => void;
   onCountryLongPress?: (countryId: string) => void;
   isVisited: (countryId: string) => boolean;
+  viewOnly?: boolean;
 }
 
 interface CountryProperties {
@@ -130,6 +131,7 @@ export default function FlatMap({
   onCountryClick,
   onCountryLongPress,
   isVisited,
+  viewOnly = false,
 }: FlatMapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -176,12 +178,14 @@ export default function FlatMap({
   // Store refs for isVisited and onCountryClick to avoid re-renders
   const isVisitedRef = useRef(isVisited);
   const onCountryClickRef = useRef(onCountryClick);
+  const viewOnlyRef = useRef(viewOnly);
 
   // Update refs when props change
   useEffect(() => {
     isVisitedRef.current = isVisited;
     onCountryClickRef.current = onCountryClick;
-  }, [isVisited, onCountryClick]);
+    viewOnlyRef.current = viewOnly;
+  }, [isVisited, onCountryClick, viewOnly]);
 
   // Update country colors when visited status changes (without re-rendering map)
   useEffect(() => {
@@ -303,11 +307,12 @@ export default function FlatMap({
             setTooltip((prev) => ({ ...prev, visible: false }));
           })
           .on("click", function (_, d) {
-            // Don't trigger click if long press fired
+            // Don't trigger click if long press fired or view-only mode
             if (longPressFiredRef.current) {
               longPressFiredRef.current = false;
               return;
             }
+            if (viewOnlyRef.current) return;
             const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
             const code = getCountryCode(name);
             if (code) {
@@ -350,69 +355,6 @@ export default function FlatMap({
             }
           });
 
-        // Add zoom controls
-        const zoomControls = svg.append("g")
-          .attr("class", "zoom-controls")
-          .attr("transform", `translate(${dimensions.width - 50}, 20)`);
-
-        // Zoom in button
-        zoomControls.append("rect")
-          .attr("width", 32)
-          .attr("height", 32)
-          .attr("rx", 6)
-          .attr("fill", "white")
-          .attr("stroke", "#e2e8f0")
-          .attr("cursor", "pointer")
-          .on("click", () => svg.transition().call(zoom.scaleBy, 1.5));
-
-        zoomControls.append("text")
-          .attr("x", 16)
-          .attr("y", 21)
-          .attr("text-anchor", "middle")
-          .attr("font-size", "18px")
-          .attr("fill", "#64748b")
-          .attr("pointer-events", "none")
-          .text("+");
-
-        // Zoom out button
-        zoomControls.append("rect")
-          .attr("y", 40)
-          .attr("width", 32)
-          .attr("height", 32)
-          .attr("rx", 6)
-          .attr("fill", "white")
-          .attr("stroke", "#e2e8f0")
-          .attr("cursor", "pointer")
-          .on("click", () => svg.transition().call(zoom.scaleBy, 0.67));
-
-        zoomControls.append("text")
-          .attr("x", 16)
-          .attr("y", 61)
-          .attr("text-anchor", "middle")
-          .attr("font-size", "18px")
-          .attr("fill", "#64748b")
-          .attr("pointer-events", "none")
-          .text("−");
-
-        // Reset button
-        zoomControls.append("rect")
-          .attr("y", 80)
-          .attr("width", 32)
-          .attr("height", 32)
-          .attr("rx", 6)
-          .attr("fill", "white")
-          .attr("stroke", "#e2e8f0")
-          .attr("cursor", "pointer")
-          .on("click", () => svg.transition().call(zoom.transform, d3.zoomIdentity));
-
-        zoomControls.append("text")
-          .attr("x", 16)
-          .attr("y", 101)
-          .attr("text-anchor", "middle")
-          .attr("font-size", "12px")
-          .attr("fill", "#64748b")
-          .attr("pointer-events", "none")
-          .text("⟲");
       })
       .catch((err) => console.error("Failed to load map:", err));
   }, [dimensions, getCountryCode]);
