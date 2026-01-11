@@ -6,7 +6,7 @@ import {
   COUNTRIES,
   TERRITORIES,
   US_STATES,
-  ALL_LOCATIONS,
+  LOCATIONS_BY_ID,
   CONTINENTS,
   getChildLocations,
   type Continent,
@@ -57,12 +57,8 @@ export function useVisits() {
     if (authInitializedRef.current) return;
     authInitializedRef.current = true;
 
-    console.log("[DEBUG] Auth init starting, Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-
     const initAuth = async () => {
-      console.log("[DEBUG] Calling supabase.auth.getUser()...");
       const { data: { user: fetchedUser } } = await supabase.auth.getUser();
-      console.log("[DEBUG] getUser returned:", fetchedUser?.id ?? "no user");
       const userId = fetchedUser?.id ?? null;
 
       // Only update if different from current
@@ -109,14 +105,10 @@ export function useVisits() {
   useEffect(() => {
     const currentUserId = user?.id ?? null;
 
-    console.log("[DEBUG] Visits effect: user=", currentUserId, "loadedFor=", visitsLoadedForUserRef.current);
-
     // Skip if we've already loaded for this user (or null user)
     if (visitsLoadedForUserRef.current === currentUserId) {
-      console.log("[DEBUG] Skipping - already loaded for this user");
       return;
     }
-    console.log("[DEBUG] Proceeding to load visits...");
 
     const loadFromLocalStorage = () => {
       try {
@@ -210,7 +202,6 @@ export function useVisits() {
       } else {
         loadFromLocalStorage();
       }
-      console.log("[DEBUG] Setting isLoaded to true");
       setIsLoaded(true);
     };
 
@@ -355,7 +346,7 @@ export function useVisits() {
         scheduleSyncToSupabase("upsert", newVisit);
 
         // Auto-mark parent (US) if a state is visited
-        const location = ALL_LOCATIONS.find(l => l.id === locationId);
+        const location = LOCATIONS_BY_ID.get(locationId);
         if (location?.type === "state" && location.parentId && !next.has(location.parentId)) {
           const parentVisit: Visit = {
             id: `local-${Date.now()}-parent`,
@@ -517,7 +508,7 @@ export function useVisits() {
   const wishlistCountries = useMemo(() => {
     const set = new Set<string>();
     wishlist.forEach((_, locationId) => {
-      const location = ALL_LOCATIONS.find(l => l.id === locationId);
+      const location = LOCATIONS_BY_ID.get(locationId);
       if (location) {
         if (location.type === "country") {
           set.add(locationId);
@@ -534,7 +525,7 @@ export function useVisits() {
     const set = new Set<string>();
     visits.forEach((_, locationId) => {
       // Only add country-level IDs for map coloring
-      const location = ALL_LOCATIONS.find(l => l.id === locationId);
+      const location = LOCATIONS_BY_ID.get(locationId);
       if (location) {
         if (location.type === "country") {
           set.add(locationId);
@@ -557,7 +548,7 @@ export function useVisits() {
     const visitedStateIds = new Set<string>();
 
     visitedLocations.forEach((visit) => {
-      const location = ALL_LOCATIONS.find(l => l.id === visit.locationId);
+      const location = LOCATIONS_BY_ID.get(visit.locationId);
       if (location) {
         if (location.type === "country") {
           visitedCountryIds.add(visit.locationId);
@@ -650,7 +641,7 @@ export function useVisits() {
     const wishlistCountryIds = new Set<string>();
 
     wishlistLocations.forEach((item) => {
-      const location = ALL_LOCATIONS.find(l => l.id === item.locationId);
+      const location = LOCATIONS_BY_ID.get(item.locationId);
       if (location?.type === "country") {
         wishlistCountryIds.add(item.locationId);
       }

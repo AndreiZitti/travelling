@@ -575,15 +575,16 @@ export default function Home() {
       {selectedLocationId && (
         <VisitDetailModal
           locationId={selectedLocationId}
-          visit={getVisit(selectedLocationId)}
+          visit={mapMode === "wishlist" ? getWishlistItem(selectedLocationId) : getVisit(selectedLocationId)}
           isOpen={visitModalOpen}
           onClose={() => {
             setVisitModalOpen(false);
             setSelectedLocationId(null);
           }}
-          onSave={updateVisit}
-          onDelete={deleteVisit}
+          onSave={mapMode === "wishlist" ? updateWishlistItem : updateVisit}
+          onDelete={mapMode === "wishlist" ? deleteWishlistItem : deleteVisit}
           userId={user?.id}
+          isWishlist={mapMode === "wishlist"}
         />
       )}
 
@@ -605,6 +606,8 @@ export default function Home() {
         onClose={() => setFullMode(false)}
         onCountryLongPress={handleOpenVisitDetail}
         isVisited={isVisited}
+        isWishlisted={isWishlisted}
+        showWishlist={mapMode === "wishlist"}
       />
 
       {/* Mobile Country List Modal - for adding countries */}
@@ -626,7 +629,9 @@ export default function Home() {
               className="md:hidden fixed inset-x-0 bottom-0 top-12 bg-been-bg z-50 rounded-t-3xl flex flex-col"
             >
               <div className="p-4 border-b border-been-card flex items-center justify-between">
-                <h2 className="text-xl font-bold text-been-text">Add Countries</h2>
+                <h2 className={`text-xl font-bold ${mapMode === "wishlist" ? "text-blue-500" : "text-been-text"}`}>
+                  {mapMode === "wishlist" ? "Add to Wishlist" : "Add Countries"}
+                </h2>
                 <button
                   onClick={() => setMobileCountryListOpen(false)}
                   className="p-2 rounded-lg hover:bg-been-card transition-colors"
@@ -638,15 +643,16 @@ export default function Home() {
               </div>
               <div className="flex-1 overflow-hidden">
                 <CountryList
-                  visitedCountries={visitedCountries}
-                  onToggleCountry={toggleVisit}
-                  isVisited={isVisited}
+                  visitedCountries={mapMode === "wishlist" ? wishlistCountries : visitedCountries}
+                  onToggleCountry={mapMode === "wishlist" ? toggleWishlist : toggleVisit}
+                  isVisited={mapMode === "wishlist" ? isWishlisted : isVisited}
                   onCountryLongPress={(locationId) => {
                     setMobileCountryListOpen(false);
                     handleOpenVisitDetail(locationId);
                   }}
-                  visits={visits}
+                  visits={mapMode === "wishlist" ? wishlist : visits}
                   darkMode
+                  isWishlist={mapMode === "wishlist"}
                 />
               </div>
             </motion.div>

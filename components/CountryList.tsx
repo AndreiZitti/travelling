@@ -19,6 +19,7 @@ interface CountryListProps {
   onCountryLongPress?: (countryId: string) => void;
   visits?: Map<string, Visit>;
   darkMode?: boolean;
+  isWishlist?: boolean;
 }
 
 export default function CountryList({
@@ -27,6 +28,7 @@ export default function CountryList({
   onCountryLongPress,
   visits,
   darkMode = false,
+  isWishlist = false,
 }: CountryListProps) {
   const [search, setSearch] = useState("");
   const [selectedContinent, setSelectedContinent] = useState<Continent | "all">("all");
@@ -175,6 +177,7 @@ export default function CountryList({
                   onChildLongPress={onCountryLongPress}
                   getChildRating={getVisitRating}
                   darkMode={darkMode}
+                  isWishlist={isWishlist}
                 />
               ))}
             </div>
@@ -205,6 +208,7 @@ interface CountryRowProps {
   onChildLongPress?: (id: string) => void;
   getChildRating: (id: string) => number | undefined;
   darkMode?: boolean;
+  isWishlist?: boolean;
 }
 
 function CountryRow({
@@ -220,6 +224,7 @@ function CountryRow({
   onChildLongPress,
   getChildRating,
   darkMode = false,
+  isWishlist = false,
 }: CountryRowProps) {
   const territories = getTerritoriesForCountry(country.id);
   const states = country.id === "US" ? getStatesForCountry(country.id) : [];
@@ -265,7 +270,7 @@ function CountryRow({
       <div
         className={`w-full px-3 py-2 flex items-center gap-3 transition-colors ${
           darkMode
-            ? visited ? "bg-been-accent/10 hover:bg-been-accent/20" : "hover:bg-been-card"
+            ? visited ? (isWishlist ? "bg-blue-500/10 hover:bg-blue-500/20" : "bg-been-accent/10 hover:bg-been-accent/20") : "hover:bg-been-card"
             : visited ? "bg-indigo-50 hover:bg-slate-50" : "hover:bg-slate-50"
         }`}
       >
@@ -302,7 +307,7 @@ function CountryRow({
           <span
             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
               darkMode
-                ? visited ? "bg-been-accent border-been-accent" : "border-been-muted"
+                ? visited ? (isWishlist ? "bg-blue-500 border-blue-500" : "bg-been-accent border-been-accent") : "border-been-muted"
                 : visited ? "bg-indigo-500 border-indigo-500" : "border-slate-300"
             }`}
           >
@@ -325,7 +330,7 @@ function CountryRow({
           <span
             className={`text-sm flex-1 ${
               darkMode
-                ? visited ? "text-been-accent font-medium" : "text-been-text"
+                ? visited ? (isWishlist ? "text-blue-500 font-medium" : "text-been-accent font-medium") : "text-been-text"
                 : visited ? "text-indigo-700 font-medium" : "text-slate-700"
             }`}
           >
@@ -343,7 +348,7 @@ function CountryRow({
           {hasChildLocations && visitedChildCount > 0 && (
             <span className={`text-xs px-1.5 py-0.5 rounded-full ${
               darkMode
-                ? 'bg-been-accent/20 text-been-accent'
+                ? isWishlist ? 'bg-blue-500/20 text-blue-500' : 'bg-been-accent/20 text-been-accent'
                 : 'bg-indigo-100 text-indigo-600'
             }`}>
               {visitedChildCount}/{children.length}
@@ -364,6 +369,7 @@ function CountryRow({
               onToggle={() => onToggleChild(child.id)}
               onLongPress={onChildLongPress ? () => onChildLongPress(child.id) : undefined}
               darkMode={darkMode}
+              isWishlist={isWishlist}
             />
           ))}
         </div>
@@ -380,6 +386,7 @@ interface ChildLocationRowProps {
   onToggle: () => void;
   onLongPress?: () => void;
   darkMode?: boolean;
+  isWishlist?: boolean;
 }
 
 function ChildLocationRow({
@@ -389,6 +396,7 @@ function ChildLocationRow({
   onToggle,
   onLongPress,
   darkMode = false,
+  isWishlist = false,
 }: ChildLocationRowProps) {
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const longPressFiredRef = useRef(false);
@@ -427,14 +435,14 @@ function ChildLocationRow({
       onPointerCancel={handlePointerUp}
       className={`w-full pl-12 pr-3 py-2 flex items-center gap-3 transition-colors text-left ${
         darkMode
-          ? isVisited ? "bg-been-accent/5 hover:bg-been-accent/10" : "hover:bg-been-card/50"
+          ? isVisited ? (isWishlist ? "bg-blue-500/5 hover:bg-blue-500/10" : "bg-been-accent/5 hover:bg-been-accent/10") : "hover:bg-been-card/50"
           : isVisited ? "bg-indigo-50/50 hover:bg-slate-100" : "hover:bg-slate-100"
       }`}
     >
       <span
         className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
           darkMode
-            ? isVisited ? "bg-been-accent/80 border-been-accent/80" : "border-been-muted"
+            ? isVisited ? (isWishlist ? "bg-blue-500/80 border-blue-500/80" : "bg-been-accent/80 border-been-accent/80") : "border-been-muted"
             : isVisited ? "bg-indigo-400 border-indigo-400" : "border-slate-300"
         }`}
       >
@@ -457,7 +465,7 @@ function ChildLocationRow({
       <span
         className={`text-xs flex-1 ${
           darkMode
-            ? isVisited ? "text-been-accent font-medium" : "text-been-text"
+            ? isVisited ? (isWishlist ? "text-blue-500 font-medium" : "text-been-accent font-medium") : "text-been-text"
             : isVisited ? "text-indigo-600 font-medium" : "text-slate-600"
         }`}
       >

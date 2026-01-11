@@ -370,6 +370,16 @@ export const US_STATES: Location[] = [
 
 export const ALL_LOCATIONS: Location[] = [...COUNTRIES, ...TERRITORIES, ...US_STATES];
 
+// Pre-computed lookup Map for O(1) access by ID
+export const LOCATIONS_BY_ID: Map<string, Location> = new Map(
+  ALL_LOCATIONS.map(loc => [loc.id, loc])
+);
+
+// Pre-computed lookup Map for O(1) access by name (lowercase)
+export const LOCATIONS_BY_NAME: Map<string, Location> = new Map(
+  ALL_LOCATIONS.map(loc => [loc.name.toLowerCase(), loc])
+);
+
 export const TOTAL_COUNTRIES = COUNTRIES.length;
 export const TOTAL_TERRITORIES = TERRITORIES.length;
 export const TOTAL_US_STATES = US_STATES.length;
@@ -378,13 +388,11 @@ export const TOTAL_US_STATES = US_STATES.length;
 export type Country = Location;
 
 export function getLocationById(id: string): Location | undefined {
-  return ALL_LOCATIONS.find((loc) => loc.id === id);
+  return LOCATIONS_BY_ID.get(id);
 }
 
 export function getLocationByName(name: string): Location | undefined {
-  return ALL_LOCATIONS.find(
-    (loc) => loc.name.toLowerCase() === name.toLowerCase()
-  );
+  return LOCATIONS_BY_NAME.get(name.toLowerCase());
 }
 
 export function getLocationsByContinent(continent: Continent): Location[] {

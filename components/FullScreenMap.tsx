@@ -18,6 +18,8 @@ interface FullScreenMapProps {
   onClose: () => void;
   onCountryLongPress?: (countryId: string) => void;
   isVisited: (countryId: string) => boolean;
+  isWishlisted?: (countryId: string) => boolean;
+  showWishlist?: boolean;
 }
 
 export default function FullScreenMap({
@@ -25,6 +27,8 @@ export default function FullScreenMap({
   onClose,
   onCountryLongPress,
   isVisited,
+  isWishlisted,
+  showWishlist = false,
 }: FullScreenMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -128,6 +132,8 @@ export default function FullScreenMap({
             onCountryClick={handleCountryClick}
             onCountryLongPress={onCountryLongPress}
             isVisited={isVisited}
+            isWishlisted={isWishlisted}
+            showWishlist={showWishlist}
             viewOnly={true}
             darkMode={true}
           />

@@ -14,6 +14,7 @@ interface VisitDetailModalProps {
   onSave: (locationId: string, updates: VisitInput) => void;
   onDelete?: (locationId: string) => void;
   userId?: string;
+  isWishlist?: boolean;
 }
 
 export default function VisitDetailModal({
@@ -24,6 +25,7 @@ export default function VisitDetailModal({
   onSave,
   onDelete,
   userId,
+  isWishlist = false,
 }: VisitDetailModalProps) {
   const location = getLocationById(locationId);
 
@@ -91,7 +93,10 @@ export default function VisitDetailModal({
   };
 
   const handleDelete = () => {
-    if (onDelete && confirm(`Are you sure you want to remove ${location?.name} from your visits?`)) {
+    const message = isWishlist
+      ? `Are you sure you want to remove ${location?.name} from your wishlist?`
+      : `Are you sure you want to remove ${location?.name} from your visits?`;
+    if (onDelete && confirm(message)) {
       onDelete(locationId);
       onClose();
     }
@@ -151,7 +156,7 @@ export default function VisitDetailModal({
               {/* Rating */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  How did you like it?
+                  {isWishlist ? "How excited are you to visit?" : "How did you like it?"}
                 </label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -178,7 +183,7 @@ export default function VisitDetailModal({
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="What did you do? Any highlights or memories..."
+                  placeholder={isWishlist ? "Why do you want to visit? What do you want to see..." : "What did you do? Any highlights or memories..."}
                   rows={3}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
                 />
@@ -187,7 +192,7 @@ export default function VisitDetailModal({
               {/* Visit Dates */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  When did you visit?
+                  {isWishlist ? "When do you want to visit?" : "When did you visit?"}
                 </label>
 
                 {/* Existing dates */}
@@ -246,7 +251,7 @@ export default function VisitDetailModal({
               {/* Places Visited */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Places you visited
+                  {isWishlist ? "Places you want to see" : "Places you visited"}
                 </label>
 
                 {/* Existing places */}

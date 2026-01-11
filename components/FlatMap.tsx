@@ -26,6 +26,32 @@ interface CountryProperties {
 const TOPOJSON_URL =
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
 
+// Cache for TopoJSON data to avoid re-fetching
+let cachedTopology: Topology<{ countries: GeometryCollection<CountryProperties> }> | null = null;
+let topologyPromise: Promise<Topology<{ countries: GeometryCollection<CountryProperties> }>> | null = null;
+
+const fetchTopology = (): Promise<Topology<{ countries: GeometryCollection<CountryProperties> }>> => {
+  if (cachedTopology) {
+    return Promise.resolve(cachedTopology);
+  }
+  if (topologyPromise) {
+    return topologyPromise;
+  }
+  topologyPromise = fetch(TOPOJSON_URL)
+    .then(res => res.json())
+    .then(data => {
+      cachedTopology = data;
+      return data;
+    });
+  return topologyPromise;
+};
+
+// Preload map data immediately when this module is imported
+// This starts the download before the component mounts
+if (typeof window !== 'undefined') {
+  fetchTopology();
+}
+
 // Helper to normalize TopoJSON ID (removes leading zeros)
 const normalizeId = (id: string | number | undefined): string => {
   if (id === undefined) return "";
@@ -302,10 +328,9 @@ export default function FlatMap({
       .attr("y", -dimensions.height)
       .attr("fill", colors.ocean);
 
-    // Fetch and render countries
-    fetch(TOPOJSON_URL)
-      .then((res) => res.json())
-      .then((topology: Topology<{ countries: GeometryCollection<CountryProperties> }>) => {
+    // Fetch and render countries (uses cached data if available)
+    fetchTopology()
+      .then((topology) => {
         const countries = feature(
           topology,
           topology.objects.countries
