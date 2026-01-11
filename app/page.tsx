@@ -205,10 +205,19 @@ export default function Home() {
             </div>
           </div>
 
-          <div className={`absolute bottom-4 left-4 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md text-sm ${
-            viewMode === "globe" ? "bg-black/50 text-white/80" : "bg-white/90 text-slate-600"
+          <div className={`absolute bottom-4 left-4 backdrop-blur-sm px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium ${
+            viewMode === "globe" ? "bg-black/70 text-white" : "bg-white/95 text-slate-700"
           }`}>
-            {isLocked ? "Locked - Unlock to edit" : "Click to mark visited - Right-click for details"}
+            {isLocked ? (
+              <span className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Locked - Unlock to edit
+              </span>
+            ) : (
+              "Click to mark visited - Right-click for details"
+            )}
           </div>
         </div>
       </div>
@@ -244,30 +253,30 @@ export default function Home() {
             />
           </div>
 
-          {/* View Toggle and Lock Button */}
+          {/* View Toggle and Lock Button - larger touch targets for mobile */}
           <div className="absolute top-4 right-4 flex items-center gap-2">
             <button
               onClick={() => setIsLocked(!isLocked)}
-              className={`p-1.5 rounded-lg shadow-md backdrop-blur-sm transition-colors ${
+              className={`p-2.5 rounded-xl shadow-md backdrop-blur-sm transition-all active:scale-95 ${
                 isLocked
                   ? "bg-amber-500 text-white"
                   : "bg-white/90 text-slate-600 hover:bg-slate-100"
               }`}
             >
               {isLocked ? (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                 </svg>
               )}
             </button>
-            <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-md overflow-hidden flex">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md overflow-hidden flex">
               <button
                 onClick={() => setViewMode("flat")}
-                className={`px-2 py-1.5 text-xs font-medium transition-colors ${
+                className={`px-3 py-2.5 text-sm font-medium transition-all active:scale-95 ${
                   viewMode === "flat"
                     ? "bg-indigo-500 text-white"
                     : "text-slate-600 hover:bg-slate-100"
@@ -277,7 +286,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setViewMode("globe")}
-                className={`px-2 py-1.5 text-xs font-medium transition-colors ${
+                className={`px-3 py-2.5 text-sm font-medium transition-all active:scale-95 ${
                   viewMode === "globe"
                     ? "bg-indigo-500 text-white"
                     : "text-slate-600 hover:bg-slate-100"
@@ -288,10 +297,19 @@ export default function Home() {
             </div>
           </div>
 
-          <div className={`absolute bottom-4 left-4 right-4 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md text-xs text-center ${
-            viewMode === "globe" ? "bg-black/50 text-white/80" : "bg-white/90 text-slate-600"
+          <div className={`absolute bottom-6 left-4 right-4 backdrop-blur-sm px-4 py-2.5 rounded-xl shadow-lg text-sm text-center font-medium ${
+            viewMode === "globe" ? "bg-black/70 text-white" : "bg-white/95 text-slate-700"
           }`}>
-            {isLocked ? "Locked - Tap lock to edit" : "Tap to mark visited - Long press for details"}
+            {isLocked ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Locked - Tap lock to edit
+              </span>
+            ) : (
+              "Tap to mark visited - Long press for details"
+            )}
           </div>
         </div>
       </div>

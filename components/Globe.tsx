@@ -181,12 +181,18 @@ export default function Globe({
       // Set initial view
       globeEl.current.pointOfView({ lat: 20, lng: 0, altitude: 2.5 });
 
-      // Configure controls
+      // Configure controls for smoother interaction
       const controls = globeEl.current.controls();
       if (controls) {
         controls.autoRotate = true;
         controls.autoRotateSpeed = 0.3;
         controls.enableZoom = true;
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.1;
+        controls.rotateSpeed = 0.8;
+        controls.zoomSpeed = 1.0;
+        controls.minDistance = 101;
+        controls.maxDistance = 500;
       }
     }
   }, []);
