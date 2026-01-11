@@ -216,11 +216,17 @@ export default function FlatMap({
     // Create zoom behavior (50m map supports higher zoom)
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 20])
+      .filter((event) => {
+        // Allow all touch events and mouse events except right-click
+        return !event.ctrlKey && event.type !== "contextmenu";
+      })
       .on("zoom", (event) => {
+        // Use transform directly without transition for smooth panning
         g.attr("transform", event.transform);
       });
 
-    svg.call(zoom);
+    svg.call(zoom)
+      .on("dblclick.zoom", null); // Disable double-click zoom for cleaner mobile UX
 
     // Create a group for the map
     const g = svg.append("g");
@@ -417,7 +423,8 @@ export default function FlatMap({
         ref={svgRef}
         width={dimensions.width}
         height={dimensions.height}
-        className="block"
+        className="block touch-none"
+        style={{ touchAction: "none" }}
       />
       {tooltip.visible && (
         <div

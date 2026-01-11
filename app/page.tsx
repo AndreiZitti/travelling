@@ -36,6 +36,7 @@ export default function Home() {
   const [statsDrawerOpen, setStatsDrawerOpen] = useState(false);
   const [visitModalOpen, setVisitModalOpen] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [isLocked, setIsLocked] = useState(true);
 
   const {
     visitedCountries,
@@ -60,8 +61,9 @@ export default function Home() {
     setVisitModalOpen(true);
   };
 
-  // Handle map country click - toggle visit
+  // Handle map country click - toggle visit (only if unlocked)
   const handleMapCountryClick = (countryId: string) => {
+    if (isLocked) return;
     toggleVisit(countryId);
   };
 
@@ -158,34 +160,55 @@ export default function Home() {
             />
           </div>
 
-          {/* View Toggle */}
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-md overflow-hidden flex">
+          {/* View Toggle and Lock Button */}
+          <div className="absolute top-4 right-4 flex items-center gap-2">
             <button
-              onClick={() => setViewMode("flat")}
-              className={`px-3 py-2 text-sm font-medium transition-colors ${
-                viewMode === "flat"
-                  ? "bg-indigo-500 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
+              onClick={() => setIsLocked(!isLocked)}
+              className={`p-2 rounded-lg shadow-md backdrop-blur-sm transition-colors ${
+                isLocked
+                  ? "bg-amber-500 text-white"
+                  : "bg-white/90 text-slate-600 hover:bg-slate-100"
               }`}
+              title={isLocked ? "Unlock to edit" : "Lock to prevent changes"}
             >
-              Flat
+              {isLocked ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                </svg>
+              )}
             </button>
-            <button
-              onClick={() => setViewMode("globe")}
-              className={`px-3 py-2 text-sm font-medium transition-colors ${
-                viewMode === "globe"
-                  ? "bg-indigo-500 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              Globe
-            </button>
+            <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-md overflow-hidden flex">
+              <button
+                onClick={() => setViewMode("flat")}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  viewMode === "flat"
+                    ? "bg-indigo-500 text-white"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                Flat
+              </button>
+              <button
+                onClick={() => setViewMode("globe")}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  viewMode === "globe"
+                    ? "bg-indigo-500 text-white"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                Globe
+              </button>
+            </div>
           </div>
 
           <div className={`absolute bottom-4 left-4 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md text-sm ${
             viewMode === "globe" ? "bg-black/50 text-white/80" : "bg-white/90 text-slate-600"
           }`}>
-            Click to mark visited - Right-click for details
+            {isLocked ? "Locked - Unlock to edit" : "Click to mark visited - Right-click for details"}
           </div>
         </div>
       </div>
@@ -221,34 +244,54 @@ export default function Home() {
             />
           </div>
 
-          {/* View Toggle */}
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-md overflow-hidden flex">
+          {/* View Toggle and Lock Button */}
+          <div className="absolute top-4 right-4 flex items-center gap-2">
             <button
-              onClick={() => setViewMode("flat")}
-              className={`px-2 py-1.5 text-xs font-medium transition-colors ${
-                viewMode === "flat"
-                  ? "bg-indigo-500 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
+              onClick={() => setIsLocked(!isLocked)}
+              className={`p-1.5 rounded-lg shadow-md backdrop-blur-sm transition-colors ${
+                isLocked
+                  ? "bg-amber-500 text-white"
+                  : "bg-white/90 text-slate-600 hover:bg-slate-100"
               }`}
             >
-              Flat
+              {isLocked ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                </svg>
+              )}
             </button>
-            <button
-              onClick={() => setViewMode("globe")}
-              className={`px-2 py-1.5 text-xs font-medium transition-colors ${
-                viewMode === "globe"
-                  ? "bg-indigo-500 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              Globe
-            </button>
+            <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-md overflow-hidden flex">
+              <button
+                onClick={() => setViewMode("flat")}
+                className={`px-2 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === "flat"
+                    ? "bg-indigo-500 text-white"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                Flat
+              </button>
+              <button
+                onClick={() => setViewMode("globe")}
+                className={`px-2 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === "globe"
+                    ? "bg-indigo-500 text-white"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                Globe
+              </button>
+            </div>
           </div>
 
           <div className={`absolute bottom-4 left-4 right-4 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md text-xs text-center ${
             viewMode === "globe" ? "bg-black/50 text-white/80" : "bg-white/90 text-slate-600"
           }`}>
-            Tap to mark visited - Long press for details
+            {isLocked ? "Locked - Tap lock to edit" : "Tap to mark visited - Long press for details"}
           </div>
         </div>
       </div>

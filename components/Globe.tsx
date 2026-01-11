@@ -270,8 +270,8 @@ export default function Globe({
   return (
     <div
       ref={containerRef}
-      className="w-full h-full"
-      style={{ background: "#0a0a1a" }}
+      className="w-full h-full touch-none"
+      style={{ background: "#0a0a1a", touchAction: "none" }}
     >
       {dimensions.width > 0 && dimensions.height > 0 && countries.length > 0 && (
         <GlobeGL
