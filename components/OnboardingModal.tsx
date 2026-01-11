@@ -7,21 +7,25 @@ interface OnboardingModalProps {
 }
 
 export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
+  const handleGetStarted = () => {
+    onComplete();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop - pointer-events-none so clicks pass through to modal */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+      {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
 
-      {/* Modal - z-10 ensures it's above backdrop */}
+      {/* Modal - pointer-events-auto to capture clicks */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="relative z-10 bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden"
+        className="relative z-10 bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden pointer-events-auto"
       >
         {/* Content */}
         <div className="p-6">
@@ -38,7 +42,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
             </h2>
 
             <p className="text-slate-600 text-sm leading-relaxed mb-4">
-              Click any country to mark it as visited. Right-click (or long-press on mobile) for more details.
+              Tap any country to mark it as visited. Long-press for more details.
             </p>
 
             {/* Data persistence note */}
@@ -62,8 +66,13 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
         {/* Action */}
         <div className="px-6 pb-6">
           <button
-            onClick={onComplete}
-            className="w-full px-4 py-3 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors"
+            type="button"
+            onClick={handleGetStarted}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              handleGetStarted();
+            }}
+            className="w-full px-4 py-4 text-base font-medium text-white bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 rounded-xl transition-colors select-none touch-manipulation"
           >
             Get Started
           </button>

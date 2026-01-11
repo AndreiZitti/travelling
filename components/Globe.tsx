@@ -16,6 +16,7 @@ interface GlobeProps {
   onCountryClick: (countryId: string) => void;
   onCountryLongPress?: (countryId: string) => void;
   isVisited: (countryId: string) => boolean;
+  darkMode?: boolean;
 }
 
 interface CountryProperties {
@@ -138,7 +139,11 @@ export default function Globe({
   onCountryClick,
   onCountryLongPress,
   isVisited,
+  darkMode = false,
 }: GlobeProps) {
+  // Colors based on mode
+  const visitedColor = darkMode ? "rgba(245, 166, 35, 0.9)" : "rgba(99, 102, 241, 0.9)";
+  const atmosphereColorValue = darkMode ? "#F5A623" : "#6366f1";
   const globeEl = useRef<any>();
   const containerRef = useRef<HTMLDivElement>(null);
   const [countries, setCountries] = useState<CountryFeature[]>([]);
@@ -253,10 +258,10 @@ export default function Globe({
   const getColor = useCallback((feat: object): string => {
     const code = getCountryCode(feat as CountryFeature);
     if (code && isVisited(code)) {
-      return "rgba(99, 102, 241, 0.9)"; // indigo for visited
+      return visitedColor;
     }
     return "rgba(30, 30, 46, 0.8)"; // dark for not visited
-  }, [getCountryCode, isVisited]);
+  }, [getCountryCode, isVisited, visitedColor]);
 
   // Get altitude for country
   const getAltitude = useCallback((feat: object): number => {
@@ -294,7 +299,7 @@ export default function Globe({
           polygonLabel={getLabel}
           onPolygonClick={handleClick}
           onPolygonRightClick={handleRightClick}
-          atmosphereColor="#6366f1"
+          atmosphereColor={atmosphereColorValue}
           atmosphereAltitude={0.2}
           onGlobeReady={handleGlobeReady}
         />

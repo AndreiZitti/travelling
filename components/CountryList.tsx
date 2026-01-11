@@ -18,6 +18,7 @@ interface CountryListProps {
   isVisited: (countryId: string) => boolean;
   onCountryLongPress?: (countryId: string) => void;
   visits?: Map<string, Visit>;
+  darkMode?: boolean;
 }
 
 export default function CountryList({
@@ -25,6 +26,7 @@ export default function CountryList({
   isVisited,
   onCountryLongPress,
   visits,
+  darkMode = false,
 }: CountryListProps) {
   const [search, setSearch] = useState("");
   const [selectedContinent, setSelectedContinent] = useState<Continent | "all">("all");
@@ -90,24 +92,32 @@ export default function CountryList({
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className={`h-full flex flex-col ${darkMode ? 'bg-been-bg' : ''}`}>
       {/* Search */}
-      <div className="p-3 border-b border-slate-200">
+      <div className={`p-3 border-b ${darkMode ? 'border-been-card' : 'border-slate-200'}`}>
         <input
           type="text"
           placeholder="Search countries..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          className={`w-full px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 ${
+            darkMode
+              ? 'bg-been-card border-been-card text-been-text placeholder-been-muted focus:ring-been-accent'
+              : 'bg-slate-50 border border-slate-200 focus:ring-indigo-500 focus:border-transparent'
+          }`}
         />
       </div>
 
       {/* Filters */}
-      <div className="p-3 border-b border-slate-200">
+      <div className={`p-3 border-b ${darkMode ? 'border-been-card' : 'border-slate-200'}`}>
         <select
           value={selectedContinent}
           onChange={(e) => setSelectedContinent(e.target.value as Continent | "all")}
-          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className={`w-full px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 ${
+            darkMode
+              ? 'bg-been-card border-been-card text-been-text focus:ring-been-accent'
+              : 'bg-slate-50 border border-slate-200 focus:ring-indigo-500'
+          }`}
         >
           <option value="all">All continents</option>
           {CONTINENTS.map((continent) => (
@@ -119,7 +129,7 @@ export default function CountryList({
       </div>
 
       {/* Country list */}
-      <div className="flex-1 overflow-y-auto">
+      <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scroll' : ''}`}>
         {Object.entries(groupedCountries).map(([continent, countries]) => {
           const isExpanded = expandedContinents.has(continent);
           const visitedCount = countries.filter((c) => isVisited(c.id)).length;
@@ -128,13 +138,21 @@ export default function CountryList({
             <div key={continent}>
               <button
                 onClick={() => toggleContinent(continent)}
-                className="sticky top-0 w-full px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between hover:bg-slate-100 transition-colors"
+                className={`sticky top-0 w-full px-3 py-2 flex items-center justify-between transition-colors ${
+                  darkMode
+                    ? 'bg-been-card border-b border-been-bg hover:bg-been-card/80'
+                    : 'bg-slate-50 border-b border-slate-100 hover:bg-slate-100'
+                }`}
               >
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                <span className={`text-xs font-semibold uppercase tracking-wide ${
+                  darkMode ? 'text-been-muted' : 'text-slate-500'
+                }`}>
                   {continent} ({visitedCount}/{countries.length})
                 </span>
                 <svg
-                  className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                  className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""} ${
+                    darkMode ? 'text-been-muted' : 'text-slate-400'
+                  }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -156,6 +174,7 @@ export default function CountryList({
                   onToggleChild={onToggleCountry}
                   onChildLongPress={onCountryLongPress}
                   getChildRating={getVisitRating}
+                  darkMode={darkMode}
                 />
               ))}
             </div>
@@ -163,7 +182,7 @@ export default function CountryList({
         })}
 
         {filteredCountries.length === 0 && (
-          <div className="p-4 text-center text-slate-400 text-sm">
+          <div className={`p-4 text-center text-sm ${darkMode ? 'text-been-muted' : 'text-slate-400'}`}>
             No countries found
           </div>
         )}
@@ -185,6 +204,7 @@ interface CountryRowProps {
   onToggleChild: (id: string) => void;
   onChildLongPress?: (id: string) => void;
   getChildRating: (id: string) => number | undefined;
+  darkMode?: boolean;
 }
 
 function CountryRow({
@@ -199,6 +219,7 @@ function CountryRow({
   onToggleChild,
   onChildLongPress,
   getChildRating,
+  darkMode = false,
 }: CountryRowProps) {
   const territories = getTerritoriesForCountry(country.id);
   const states = country.id === "US" ? getStatesForCountry(country.id) : [];
@@ -242,15 +263,19 @@ function CountryRow({
   return (
     <div>
       <div
-        className={`w-full px-3 py-2 flex items-center gap-3 hover:bg-slate-50 transition-colors ${
-          visited ? "bg-indigo-50" : ""
+        className={`w-full px-3 py-2 flex items-center gap-3 transition-colors ${
+          darkMode
+            ? visited ? "bg-been-accent/10 hover:bg-been-accent/20" : "hover:bg-been-card"
+            : visited ? "bg-indigo-50 hover:bg-slate-50" : "hover:bg-slate-50"
         }`}
       >
         {/* Expand button for countries with children */}
         {hasChildLocations ? (
           <button
             onClick={onToggleExpand}
-            className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-slate-600"
+            className={`w-5 h-5 flex items-center justify-center ${
+              darkMode ? 'text-been-muted hover:text-been-text' : 'text-slate-400 hover:text-slate-600'
+            }`}
           >
             <svg
               className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
@@ -276,14 +301,14 @@ function CountryRow({
         >
           <span
             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-              visited
-                ? "bg-indigo-500 border-indigo-500"
-                : "border-slate-300"
+              darkMode
+                ? visited ? "bg-been-accent border-been-accent" : "border-been-muted"
+                : visited ? "bg-indigo-500 border-indigo-500" : "border-slate-300"
             }`}
           >
             {visited && (
               <svg
-                className="w-3 h-3 text-white"
+                className={`w-3 h-3 ${darkMode ? 'text-been-bg' : 'text-white'}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -299,7 +324,9 @@ function CountryRow({
           </span>
           <span
             className={`text-sm flex-1 ${
-              visited ? "text-indigo-700 font-medium" : "text-slate-700"
+              darkMode
+                ? visited ? "text-been-accent font-medium" : "text-been-text"
+                : visited ? "text-indigo-700 font-medium" : "text-slate-700"
             }`}
           >
             {country.name}
@@ -314,7 +341,11 @@ function CountryRow({
 
           {/* Child count badge */}
           {hasChildLocations && visitedChildCount > 0 && (
-            <span className="text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full">
+            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+              darkMode
+                ? 'bg-been-accent/20 text-been-accent'
+                : 'bg-indigo-100 text-indigo-600'
+            }`}>
               {visitedChildCount}/{children.length}
             </span>
           )}
@@ -323,7 +354,7 @@ function CountryRow({
 
       {/* Children (territories/states) */}
       {isExpanded && hasChildLocations && (
-        <div className="bg-slate-50/50">
+        <div className={darkMode ? 'bg-been-card/30' : 'bg-slate-50/50'}>
           {children.map((child) => (
             <ChildLocationRow
               key={child.id}
@@ -332,6 +363,7 @@ function CountryRow({
               rating={getChildRating(child.id)}
               onToggle={() => onToggleChild(child.id)}
               onLongPress={onChildLongPress ? () => onChildLongPress(child.id) : undefined}
+              darkMode={darkMode}
             />
           ))}
         </div>
@@ -347,6 +379,7 @@ interface ChildLocationRowProps {
   rating?: number;
   onToggle: () => void;
   onLongPress?: () => void;
+  darkMode?: boolean;
 }
 
 function ChildLocationRow({
@@ -355,6 +388,7 @@ function ChildLocationRow({
   rating,
   onToggle,
   onLongPress,
+  darkMode = false,
 }: ChildLocationRowProps) {
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const longPressFiredRef = useRef(false);
@@ -391,20 +425,22 @@ function ChildLocationRow({
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className={`w-full pl-12 pr-3 py-2 flex items-center gap-3 hover:bg-slate-100 transition-colors text-left ${
-        isVisited ? "bg-indigo-50/50" : ""
+      className={`w-full pl-12 pr-3 py-2 flex items-center gap-3 transition-colors text-left ${
+        darkMode
+          ? isVisited ? "bg-been-accent/5 hover:bg-been-accent/10" : "hover:bg-been-card/50"
+          : isVisited ? "bg-indigo-50/50 hover:bg-slate-100" : "hover:bg-slate-100"
       }`}
     >
       <span
         className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-          isVisited
-            ? "bg-indigo-400 border-indigo-400"
-            : "border-slate-300"
+          darkMode
+            ? isVisited ? "bg-been-accent/80 border-been-accent/80" : "border-been-muted"
+            : isVisited ? "bg-indigo-400 border-indigo-400" : "border-slate-300"
         }`}
       >
         {isVisited && (
           <svg
-            className="w-2.5 h-2.5 text-white"
+            className={`w-2.5 h-2.5 ${darkMode ? 'text-been-bg' : 'text-white'}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -420,15 +456,17 @@ function ChildLocationRow({
       </span>
       <span
         className={`text-xs flex-1 ${
-          isVisited ? "text-indigo-600 font-medium" : "text-slate-600"
+          darkMode
+            ? isVisited ? "text-been-accent font-medium" : "text-been-text"
+            : isVisited ? "text-indigo-600 font-medium" : "text-slate-600"
         }`}
       >
         {child.name}
         {child.type === "territory" && (
-          <span className="ml-1 text-slate-400">(territory)</span>
+          <span className={darkMode ? "ml-1 text-been-muted" : "ml-1 text-slate-400"}>(territory)</span>
         )}
         {child.type === "state" && (
-          <span className="ml-1 text-slate-400">(state)</span>
+          <span className={darkMode ? "ml-1 text-been-muted" : "ml-1 text-slate-400"}>(state)</span>
         )}
       </span>
 

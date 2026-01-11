@@ -12,6 +12,10 @@ import OnboardingModal from "@/components/OnboardingModal";
 import StatsDrawer from "@/components/StatsDrawer";
 import VisitDetailModal from "@/components/VisitDetailModal";
 import FullScreenMap from "@/components/FullScreenMap";
+import BottomNav, { TabType } from "@/components/BottomNav";
+import StatsSummaryCard from "@/components/StatsSummaryCard";
+import StatsModal from "@/components/StatsModal";
+import VisualizeTab from "@/components/VisualizeTab";
 
 const FlatMap = dynamic(() => import("@/components/FlatMap"), {
   ssr: false,
@@ -39,6 +43,8 @@ export default function Home() {
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(true);
   const [fullMode, setFullMode] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("select");
+  const [mobileStatsModalOpen, setMobileStatsModalOpen] = useState(false);
 
   const {
     visitedCountries,
@@ -79,27 +85,25 @@ export default function Home() {
 
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-slate-100">
-      {/* Mobile Header */}
-      <div className="md:hidden absolute top-0 left-0 right-0 z-20 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
-        <div>
+      {/* Mobile Header - Only show on Select tab */}
+      {activeTab === "select" && (
+        <div className="md:hidden absolute top-0 left-0 right-0 z-20 bg-been-bg px-4 py-3 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-been-accent">Travel Map</h1>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-slate-800">Travel Map</h1>
             <SyncStatus status={syncStatus} />
+            <button className="p-2 rounded-lg hover:bg-been-card transition-colors">
+              <svg className="w-6 h-6 text-been-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+            </button>
+            <button className="p-2 rounded-lg hover:bg-been-card transition-colors">
+              <svg className="w-6 h-6 text-been-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
           </div>
-          <p className="text-xs text-slate-500">{legacyStats.count} countries visited</p>
         </div>
-        <div className="flex items-center gap-2">
-          <UserMenu />
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
-          >
-            <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Desktop Layout */}
       <div className="hidden md:flex w-full h-full">
@@ -212,65 +216,201 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Mobile Layout */}
-      <div className="md:hidden w-full h-full pt-14">
-        {/* Mobile Map (full screen) */}
-        <div className="w-full h-full relative">
-          {/* Globe View */}
-          <div
-            className={`absolute inset-0 transition-opacity duration-500 ${
-              viewMode === "globe" ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
-          >
-            <Globe
-              visitedCountries={visitedCountries}
-              onCountryClick={handleMapCountryClick}
-              onCountryLongPress={handleOpenVisitDetail}
-              isVisited={isVisited}
-            />
-          </div>
-
-          {/* Flat Map View */}
-          <div
-            className={`absolute inset-0 transition-opacity duration-500 ${
-              viewMode === "flat" ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
-          >
-            <FlatMap
-              onCountryClick={handleMapCountryClick}
-              onCountryLongPress={handleOpenVisitDetail}
-              isVisited={isVisited}
-            />
-          </div>
-
-          {/* View Toggle - mobile */}
-          <div className="absolute top-4 right-4 flex items-center gap-2">
-            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md overflow-hidden flex">
-              <button
-                onClick={() => setFullMode(true)}
-                className="px-3 py-2.5 text-sm font-medium transition-all active:scale-95 text-slate-600 hover:bg-slate-100"
-              >
-                Full
-              </button>
-              <button
-                onClick={() => setViewMode(viewMode === "globe" ? "flat" : "globe")}
-                className={`px-3 py-2.5 text-sm font-medium transition-all active:scale-95 ${
-                  viewMode === "globe"
-                    ? "bg-indigo-500 text-white"
-                    : "text-slate-600 hover:bg-slate-100"
+      {/* Mobile Layout - Dark "been" style */}
+      <div className="md:hidden w-full h-full bg-been-bg pb-16">
+        {/* Select Tab */}
+        {activeTab === "select" && (
+          <div className="w-full h-full pt-14 flex flex-col">
+            {/* Map Area */}
+            <div className="flex-1 relative min-h-0">
+              {/* Globe View */}
+              <div
+                className={`absolute inset-0 transition-opacity duration-500 ${
+                  viewMode === "globe" ? "opacity-100" : "opacity-0 pointer-events-none"
                 }`}
               >
-                Globe
+                <Globe
+                  visitedCountries={visitedCountries}
+                  onCountryClick={handleMapCountryClick}
+                  onCountryLongPress={handleOpenVisitDetail}
+                  isVisited={isVisited}
+                  darkMode
+                />
+              </div>
+
+              {/* Flat Map View */}
+              <div
+                className={`absolute inset-0 transition-opacity duration-500 ${
+                  viewMode === "flat" ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
+              >
+                <FlatMap
+                  onCountryClick={handleMapCountryClick}
+                  onCountryLongPress={handleOpenVisitDetail}
+                  isVisited={isVisited}
+                  darkMode
+                />
+              </div>
+
+              {/* Carousel dots */}
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                <button
+                  onClick={() => setViewMode("flat")}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    viewMode === "flat" ? "bg-been-accent" : "bg-been-muted"
+                  }`}
+                />
+                <button
+                  onClick={() => setViewMode("globe")}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    viewMode === "globe" ? "bg-been-accent" : "bg-been-muted"
+                  }`}
+                />
+                <button
+                  onClick={() => setFullMode(true)}
+                  className="w-2 h-2 rounded-full bg-been-muted"
+                />
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="h-px bg-been-card mx-4" />
+
+            {/* Stats Section */}
+            <div className="p-4 space-y-3 overflow-y-auto dark-scroll">
+              {/* Stats Summary Card */}
+              <StatsSummaryCard
+                percentage={stats.percentageCountries}
+                visited={stats.visitedCountries}
+                total={stats.totalCountries}
+                onTap={() => setMobileStatsModalOpen(true)}
+              />
+
+              {/* My Countries Row */}
+              <button
+                onClick={() => setActiveTab("explore")}
+                className="w-full bg-been-card rounded-2xl p-4 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-been-accent/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-been-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                      <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-been-text font-medium">My Countries</p>
+                    <p className="text-been-muted text-sm">and non-UN territories</p>
+                  </div>
+                </div>
+                <svg className="w-5 h-5 text-been-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             </div>
           </div>
+        )}
 
-          <div className={`absolute bottom-6 left-4 right-4 backdrop-blur-sm px-4 py-2.5 rounded-xl shadow-lg text-sm text-center font-medium ${
-            viewMode === "globe" ? "bg-black/70 text-white" : "bg-white/95 text-slate-700"
-          }`}>
-            Tap to mark visited - Long press for details
+        {/* Explore Tab */}
+        {activeTab === "explore" && (
+          <div className="w-full h-full bg-been-bg flex flex-col">
+            <div className="p-4 border-b border-been-card">
+              <h1 className="text-2xl font-bold text-been-text">Explore</h1>
+              <p className="text-been-muted text-sm mt-1">Select countries you&apos;ve visited</p>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <CountryList
+                visitedCountries={visitedCountries}
+                onToggleCountry={toggleVisit}
+                isVisited={isVisited}
+                onCountryLongPress={handleOpenVisitDetail}
+                visits={visits}
+                darkMode
+              />
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Visualize Tab */}
+        {activeTab === "visualize" && (
+          <VisualizeTab
+            onSelectOption={(optionId) => {
+              if (optionId === "globe") {
+                setViewMode("globe");
+                setActiveTab("select");
+              } else if (optionId === "zoomable") {
+                setViewMode("flat");
+                setActiveTab("select");
+              }
+            }}
+          />
+        )}
+
+        {/* Compare Tab - Placeholder */}
+        {activeTab === "compare" && (
+          <div className="w-full h-full bg-been-bg flex flex-col items-center justify-center p-8">
+            <div className="w-20 h-20 rounded-full bg-been-card flex items-center justify-center mb-4">
+              <svg className="w-10 h-10 text-been-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-been-text mb-2">Compare</h2>
+            <p className="text-been-muted text-center">Compare your travels with friends. Coming soon!</p>
+          </div>
+        )}
+
+        {/* Profile Tab */}
+        {activeTab === "profile" && (
+          <div className="w-full h-full bg-been-bg p-4 space-y-4">
+            <h1 className="text-2xl font-bold text-been-text mb-6">Profile</h1>
+
+            {/* User Info */}
+            <div className="bg-been-card rounded-2xl p-4 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-been-accent flex items-center justify-center">
+                <span className="text-xl font-bold text-been-bg">
+                  {user?.email?.[0]?.toUpperCase() || "?"}
+                </span>
+              </div>
+              <div>
+                <p className="text-been-text font-medium">{user?.email || "Guest"}</p>
+                <p className="text-been-muted text-sm">
+                  {stats.visitedCountries} countries visited
+                </p>
+              </div>
+            </div>
+
+            {/* Menu Items */}
+            <div className="bg-been-card rounded-2xl overflow-hidden">
+              <button
+                onClick={() => setStatsDrawerOpen(true)}
+                className="w-full p-4 flex items-center justify-between border-b border-been-bg/50"
+              >
+                <span className="text-been-text">View Detailed Stats</span>
+                <svg className="w-5 h-5 text-been-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              <a
+                href="/settings"
+                className="w-full p-4 flex items-center justify-between"
+              >
+                <span className="text-been-text">Settings</span>
+                <svg className="w-5 h-5 text-been-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            </div>
+
+            {/* Sync Status */}
+            <div className="bg-been-card rounded-2xl p-4 flex items-center justify-between">
+              <span className="text-been-text">Sync Status</span>
+              <SyncStatus status={syncStatus} />
+            </div>
+          </div>
+        )}
+
+        {/* Bottom Navigation */}
+        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
 
       {/* Mobile Sidebar Overlay */}
@@ -360,6 +500,13 @@ export default function Home() {
       {showOnboarding && (
         <OnboardingModal onComplete={dismissOnboarding} />
       )}
+
+      {/* Mobile Stats Modal - "been" style */}
+      <StatsModal
+        isOpen={mobileStatsModalOpen}
+        onClose={() => setMobileStatsModalOpen(false)}
+        stats={stats}
+      />
 
       {/* Full Screen Map for mobile */}
       <FullScreenMap

@@ -19,6 +19,13 @@ const config: Config = {
           unvisited: "#f5f5f5",
           border: "#e5e5e5",
         },
+        been: {
+          bg: "#000000",
+          card: "#1C1C1E",
+          accent: "#F5A623",
+          text: "#FFFFFF",
+          muted: "#8E8E93",
+        },
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

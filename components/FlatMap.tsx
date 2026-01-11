@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import * as d3 from "d3";
 import { geoNaturalEarth1, geoPath, type GeoPermissibleObjects } from "d3-geo";
 import { feature } from "topojson-client";
@@ -12,6 +12,7 @@ interface FlatMapProps {
   onCountryLongPress?: (countryId: string) => void;
   isVisited: (countryId: string) => boolean;
   viewOnly?: boolean;
+  darkMode?: boolean;
 }
 
 interface CountryProperties {
@@ -132,7 +133,26 @@ export default function FlatMap({
   onCountryLongPress,
   isVisited,
   viewOnly = false,
+  darkMode = false,
 }: FlatMapProps) {
+  // Colors based on mode - memoized to avoid re-renders
+  const colors = useMemo(() => darkMode
+    ? {
+        ocean: "#000000",
+        visited: "#F5A623",
+        visitedHover: "#D4890F",
+        unvisited: "#2d2d44",
+        unvisitedHover: "#3d3d54",
+        stroke: "#1C1C1E",
+      }
+    : {
+        ocean: "#e8f4fc",
+        visited: "#6366f1",
+        visitedHover: "#4f46e5",
+        unvisited: "#d1d5db",
+        unvisitedHover: "#9ca3af",
+        stroke: "#ffffff",
+      }, [darkMode]);
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<{
@@ -197,10 +217,10 @@ export default function FlatMap({
       const countryCode = el.attr("data-country-code");
       if (countryCode) {
         const visited = isVisited(countryCode);
-        el.attr("fill", visited ? "#6366f1" : "#d1d5db");
+        el.attr("fill", visited ? colors.visited : colors.unvisited);
       }
     });
-  }, [isVisited]);
+  }, [isVisited, colors.visited, colors.unvisited]);
 
   // Render map (only on dimension changes)
   useEffect(() => {
@@ -241,7 +261,7 @@ export default function FlatMap({
       .attr("height", dimensions.height * 3)
       .attr("x", -dimensions.width)
       .attr("y", -dimensions.height)
-      .attr("fill", "#e8f4fc");
+      .attr("fill", colors.ocean);
 
     // Fetch and render countries
     fetch(TOPOJSON_URL)
@@ -266,9 +286,9 @@ export default function FlatMap({
           .attr("fill", (d) => {
             const name = COUNTRY_NAMES[normalizeId(d.id)] || "";
             const code = getCountryCode(name);
-            return code && isVisitedRef.current(code) ? "#6366f1" : "#d1d5db";
+            return code && isVisitedRef.current(code) ? colors.visited : colors.unvisited;
           })
-          .attr("stroke", "#ffffff")
+          .attr("stroke", colors.stroke)
           .attr("stroke-width", 0.5)
           .style("cursor", "pointer")
           .on("mouseover", function (event, d) {
@@ -277,7 +297,7 @@ export default function FlatMap({
             const visited = code ? isVisitedRef.current(code) : false;
 
             d3.select(this)
-              .attr("fill", visited ? "#4f46e5" : "#9ca3af")
+              .attr("fill", visited ? colors.visitedHover : colors.unvisitedHover)
               .attr("stroke-width", 1);
 
             setTooltip({
@@ -301,7 +321,7 @@ export default function FlatMap({
             const visited = code && isVisitedRef.current(code);
 
             d3.select(this)
-              .attr("fill", visited ? "#6366f1" : "#d1d5db")
+              .attr("fill", visited ? colors.visited : colors.unvisited)
               .attr("stroke-width", 0.5);
 
             setTooltip((prev) => ({ ...prev, visible: false }));
@@ -357,10 +377,10 @@ export default function FlatMap({
 
       })
       .catch((err) => console.error("Failed to load map:", err));
-  }, [dimensions, getCountryCode]);
+  }, [dimensions, getCountryCode, colors]);
 
   return (
-    <div ref={containerRef} className="w-full h-full relative bg-[#e8f4fc]">
+    <div ref={containerRef} className="w-full h-full relative" style={{ backgroundColor: colors.ocean }}>
       <svg
         ref={svgRef}
         width={dimensions.width}
