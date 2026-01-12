@@ -290,9 +290,9 @@ export default function Home() {
       {/* Mobile Layout - Dark "been" style */}
       <div className="md:hidden w-full h-full bg-been-bg" style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
         {/* Select Tab - Always mounted to prevent reinitialization of heavy components */}
-        <div className={`w-full h-full pt-24 flex flex-col ${activeTab !== "select" ? "hidden" : ""}`}>
+        <div className={`w-full h-full pt-24 overflow-y-auto dark-scroll ${activeTab !== "select" ? "hidden" : ""}`}>
             {/* Map Area - FlatMap only */}
-            <div className="relative" style={{ height: "50%" }}>
+            <div className="relative h-[45vh] min-h-[280px]">
               <FlatMap
                 onCountryClick={handleMapCountryClick}
                 onCountryLongPress={handleOpenVisitDetail}
@@ -317,8 +317,8 @@ export default function Home() {
             {/* Divider */}
             <div className="h-px bg-been-card mx-4" />
 
-            {/* Stats Section - scrollable */}
-            <div className="flex-1 p-4 space-y-3 overflow-y-auto dark-scroll">
+            {/* Stats Section */}
+            <div className="p-4 space-y-3">
               {/* Stats Summary Card */}
               {mapMode === "visited" ? (
                 <StatsSummaryCard
