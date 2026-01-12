@@ -459,7 +459,7 @@ export default function Home() {
 
         {/* Compare Tab - QR Code Share */}
         {activeTab === "compare" && (
-          <div className="w-full h-full bg-been-bg p-6 overflow-y-auto">
+          <div className="absolute inset-0 bg-been-bg p-6 pb-8 overflow-y-auto dark-scroll" style={{ bottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
             <h1 className="text-2xl font-bold text-been-text mb-6">Share & Compare</h1>
 
             {/* QR Code Section */}
@@ -525,7 +525,7 @@ export default function Home() {
 
         {/* Profile Tab */}
         {activeTab === "profile" && (
-          <div className="w-full h-full bg-been-bg p-4 space-y-4">
+          <div className="absolute inset-0 bg-been-bg p-4 space-y-4 overflow-y-auto dark-scroll" style={{ bottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
             <h1 className="text-2xl font-bold text-been-text mb-6">Profile</h1>
 
             {/* User Info */}
