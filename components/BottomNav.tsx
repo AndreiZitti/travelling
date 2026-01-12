@@ -85,7 +85,7 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               {isActive && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-been-accent rounded-full"
+                  className="absolute -top-0.5 inset-x-0 mx-auto w-8 h-0.5 bg-been-accent rounded-full"
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
