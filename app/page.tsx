@@ -261,10 +261,9 @@ export default function Home() {
       </div>
 
       {/* Mobile Layout - Dark "been" style */}
-      <div className="md:hidden w-full h-full bg-been-bg pb-16">
-        {/* Select Tab */}
-        {activeTab === "select" && (
-          <div className="w-full h-full pt-24 flex flex-col">
+      <div className="md:hidden w-full h-full bg-been-bg" style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
+        {/* Select Tab - Always mounted to prevent reinitialization of heavy components */}
+        <div className={`w-full h-full pt-24 flex flex-col ${activeTab !== "select" ? "hidden" : ""}`}>
             {/* Map Area - larger height */}
             <div className="relative" style={{ height: "50%" }}>
               {/* Globe View */}
@@ -411,7 +410,6 @@ export default function Home() {
               </button>
             </div>
           </div>
-        )}
 
         {/* Diary Tab */}
         {activeTab === "diary" && (
