@@ -92,7 +92,7 @@ export default function StatsModal({ isOpen, onClose, stats }: StatsModalProps) 
                         cy="50"
                         r={radius}
                         fill="none"
-                        stroke="#F5A623"
+                        style={{ stroke: "var(--been-accent)" }}
                         strokeWidth="8"
                         strokeLinecap="round"
                         strokeDasharray={circumference}

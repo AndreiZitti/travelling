@@ -22,7 +22,7 @@ const config: Config = {
         been: {
           bg: "#000000",
           card: "#1C1C1E",
-          accent: "#F5A623",
+          accent: "var(--been-accent)",  // Dynamic accent color from CSS variable
           text: "#FFFFFF",
           muted: "#8E8E93",
         },

@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-export default function UserMenu() {
+interface UserMenuProps {
+  darkMode?: boolean;
+}
+
+export default function UserMenu({ darkMode = false }: UserMenuProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -57,7 +61,7 @@ export default function UserMenu() {
 
   if (loading) {
     return (
-      <div className="w-8 h-8 bg-slate-200 rounded-full animate-pulse" />
+      <div className={`w-8 h-8 rounded-full animate-pulse ${darkMode ? 'bg-been-card' : 'bg-slate-200'}`} />
     );
   }
 
@@ -66,7 +70,11 @@ export default function UserMenu() {
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setDropdownOpen(!dropdownOpen)}
-          className="w-8 h-8 bg-slate-200 hover:bg-slate-300 rounded-full flex items-center justify-center text-slate-500 transition-colors"
+          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+            darkMode
+              ? 'bg-been-card hover:bg-been-card/80 text-been-muted'
+              : 'bg-slate-200 hover:bg-slate-300 text-slate-500'
+          }`}
           title="Sign in"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,23 +83,35 @@ export default function UserMenu() {
         </button>
 
         {dropdownOpen && (
-          <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+          <div className={`absolute right-0 mt-2 w-56 rounded-lg shadow-lg py-2 z-50 ${
+            darkMode
+              ? 'bg-been-card border border-been-bg/50'
+              : 'bg-white border border-slate-200'
+          }`}>
             <Link
               href="/login"
               onClick={() => setDropdownOpen(false)}
-              className="block px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
+              className={`block px-4 py-2 text-sm font-medium transition-colors ${
+                darkMode
+                  ? 'text-been-accent hover:bg-been-bg/50'
+                  : 'text-indigo-600 hover:bg-indigo-50'
+              }`}
             >
               Sign in
             </Link>
-            <p className="px-4 py-2 text-xs text-slate-400">
-              Contact Zitti for an account 😉
+            <p className={`px-4 py-2 text-xs ${darkMode ? 'text-been-muted' : 'text-slate-400'}`}>
+              Contact Zitti for an account
             </p>
-            <div className="border-t border-slate-100 mt-1 pt-1">
+            <div className={`border-t mt-1 pt-1 ${darkMode ? 'border-been-bg/50' : 'border-slate-100'}`}>
               <a
                 href="https://zitti.ro"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block px-4 py-2 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                className={`block px-4 py-2 text-xs transition-colors ${
+                  darkMode
+                    ? 'text-been-muted hover:text-been-text'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
               >
                 zitti.ro
               </a>
@@ -110,17 +130,25 @@ export default function UserMenu() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setDropdownOpen(!dropdownOpen)}
-        className="w-8 h-8 bg-indigo-500 hover:bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-semibold transition-colors"
+        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
+          darkMode
+            ? 'bg-been-accent hover:bg-been-accent/80 text-been-bg'
+            : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+        }`}
         title={user.email || "User menu"}
       >
         {initials}
       </button>
 
       {dropdownOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
+        <div className={`absolute right-0 mt-2 w-56 rounded-lg shadow-lg py-1 z-50 ${
+          darkMode
+            ? 'bg-been-card border border-been-bg/50'
+            : 'bg-white border border-slate-200'
+        }`}>
           {/* User info */}
-          <div className="px-4 py-3 border-b border-slate-100">
-            <p className="text-sm font-medium text-slate-800 truncate">
+          <div className={`px-4 py-3 border-b ${darkMode ? 'border-been-bg/50' : 'border-slate-100'}`}>
+            <p className={`text-sm font-medium truncate ${darkMode ? 'text-been-text' : 'text-slate-800'}`}>
               {user.email}
             </p>
           </div>
@@ -129,10 +157,14 @@ export default function UserMenu() {
           <Link
             href="/settings"
             onClick={() => setDropdownOpen(false)}
-            className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+            className={`flex items-center gap-3 px-4 py-2 text-sm transition-colors ${
+              darkMode
+                ? 'text-been-text hover:bg-been-bg/50'
+                : 'text-slate-700 hover:bg-slate-50'
+            }`}
           >
             <svg
-              className="w-4 h-4 text-slate-400"
+              className={`w-4 h-4 ${darkMode ? 'text-been-muted' : 'text-slate-400'}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -155,10 +187,14 @@ export default function UserMenu() {
 
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-3 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+            className={`flex items-center gap-3 w-full px-4 py-2 text-sm transition-colors ${
+              darkMode
+                ? 'text-been-text hover:bg-been-bg/50'
+                : 'text-slate-700 hover:bg-slate-50'
+            }`}
           >
             <svg
-              className="w-4 h-4 text-slate-400"
+              className={`w-4 h-4 ${darkMode ? 'text-been-muted' : 'text-slate-400'}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -173,12 +209,16 @@ export default function UserMenu() {
             Sign out
           </button>
 
-          <div className="border-t border-slate-100 mt-1 pt-1">
+          <div className={`border-t mt-1 pt-1 ${darkMode ? 'border-been-bg/50' : 'border-slate-100'}`}>
             <a
               href="https://zitti.ro"
               target="_blank"
               rel="noopener noreferrer"
-              className="block px-4 py-2 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+              className={`block px-4 py-2 text-xs transition-colors ${
+                darkMode
+                  ? 'text-been-muted hover:text-been-text'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
             >
               zitti.ro
             </a>

@@ -141,9 +141,49 @@ export default function Globe({
   isVisited,
   darkMode = false,
 }: GlobeProps) {
+  // State for accent color from CSS variable
+  const [accentColor, setAccentColor] = useState("#059669");
+
+  // Load accent color from CSS variable and listen for changes
+  useEffect(() => {
+    const getAccentColor = () => {
+      const color = getComputedStyle(document.documentElement)
+        .getPropertyValue("--been-accent")
+        .trim();
+      if (color) setAccentColor(color);
+    };
+
+    getAccentColor();
+
+    // Listen for storage events (when color is changed in settings)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "accentColor" && e.newValue) {
+        setAccentColor(e.newValue);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    // Also check periodically for CSS variable changes (for same-tab updates)
+    const interval = setInterval(getAccentColor, 500);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Convert hex to rgba
+  const hexToRgba = (hex: string, alpha: number): string => {
+    const num = parseInt(hex.replace("#", ""), 16);
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
   // Colors based on mode
-  const visitedColor = darkMode ? "rgba(245, 166, 35, 0.9)" : "rgba(99, 102, 241, 0.9)";
-  const atmosphereColorValue = darkMode ? "#F5A623" : "#6366f1";
+  const visitedColor = darkMode ? hexToRgba(accentColor, 0.9) : "rgba(99, 102, 241, 0.9)";
+  const atmosphereColorValue = darkMode ? accentColor : "#6366f1";
   const globeEl = useRef<any>();
   const containerRef = useRef<HTMLDivElement>(null);
   const [countries, setCountries] = useState<CountryFeature[]>([]);

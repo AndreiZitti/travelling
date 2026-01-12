@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import AccentColorLoader from "@/components/AccentColorLoader";
 
 export const metadata: Metadata = {
   title: "Zeen",
@@ -36,6 +37,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body>
+        <AccentColorLoader />
         <ServiceWorkerRegistration />
         {children}
       </body>

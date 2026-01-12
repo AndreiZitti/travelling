@@ -14,10 +14,14 @@ import StatsDrawer from "@/components/StatsDrawer";
 import VisitDetailModal from "@/components/VisitDetailModal";
 import FullScreenMap from "@/components/FullScreenMap";
 import BottomNav, { TabType } from "@/components/BottomNav";
+import SideNav from "@/components/SideNav";
 import StatsSummaryCard from "@/components/StatsSummaryCard";
 import StatsModal from "@/components/StatsModal";
 import VisualizeTab from "@/components/VisualizeTab";
 import DiaryTab from "@/components/DiaryTab";
+import CompareTab from "@/components/CompareTab";
+import ProfileTab from "@/components/ProfileTab";
+import AddCountryFAB from "@/components/AddCountryFAB";
 
 const FlatMap = dynamic(() => import("@/components/FlatMap"), {
   ssr: false,
@@ -177,53 +181,219 @@ export default function Home() {
         </div>
       )}
 
-      {/* Desktop Layout */}
-      <div className="hidden md:flex w-full h-full">
-        {/* Desktop Sidebar */}
-        <div className="w-80 h-full bg-white border-r border-slate-200 flex flex-col shadow-lg z-10">
-          {/* Header with UserMenu */}
-          <div className="p-4 border-b border-slate-200 flex items-start justify-between">
+      {/* Desktop Layout - Dark "been" style with tabbed sidebar */}
+      <div className="hidden md:flex w-full h-full bg-been-bg">
+        {/* Side Navigation */}
+        <SideNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+        {/* Content Panel */}
+        <div className="w-80 h-full bg-been-bg border-r border-been-card flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="p-4 border-b border-been-card flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-semibold text-slate-800">Travel Map</h1>
+                <h1 className="text-xl font-semibold text-been-accent">Zeen</h1>
                 <SyncStatus status={syncStatus} />
               </div>
-              <p className="text-sm text-slate-500 mt-1">Track your adventures</p>
+              <p className="text-sm text-been-muted mt-1">Track your adventures</p>
             </div>
-            <UserMenu />
           </div>
-          <div className="p-4 border-b border-slate-200">
-            <Stats
-              stats={legacyStats}
-              onViewDetails={() => setStatsDrawerOpen(true)}
-            />
-          </div>
+
+          {/* Tab Content */}
           <div className="flex-1 overflow-hidden">
-            <CountryList
-              visitedCountries={visitedCountries}
-              onToggleCountry={toggleVisit}
-              isVisited={isVisited}
-              onCountryLongPress={handleOpenVisitDetail}
-              visits={visits}
-            />
+            {/* Select Tab */}
+            {activeTab === "select" && (
+              <div className="h-full overflow-y-auto dark-scroll p-4 space-y-3">
+                {/* Visited / Wishlist Toggle */}
+                <div className="flex bg-been-card rounded-lg p-1">
+                  <button
+                    onClick={() => setMapMode("visited")}
+                    className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
+                      mapMode === "visited"
+                        ? "bg-been-accent text-been-bg"
+                        : "text-been-muted hover:text-been-text"
+                    }`}
+                  >
+                    Visited
+                  </button>
+                  <button
+                    onClick={() => setMapMode("wishlist")}
+                    className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
+                      mapMode === "wishlist"
+                        ? "bg-blue-500 text-white"
+                        : "text-been-muted hover:text-been-text"
+                    }`}
+                  >
+                    Wishlist
+                  </button>
+                </div>
+
+                {/* Stats Summary Card */}
+                {mapMode === "visited" ? (
+                  <StatsSummaryCard
+                    percentage={stats.percentageCountries}
+                    visited={stats.visitedCountries}
+                    total={stats.totalCountries}
+                    onTap={() => setMobileStatsModalOpen(true)}
+                  />
+                ) : (
+                  <div
+                    onClick={() => setMobileStatsModalOpen(true)}
+                    className="bg-been-card rounded-2xl p-4 cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-been-muted text-sm">Wishlist</p>
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <span className="text-3xl font-bold text-blue-500">
+                            {wishlistStats.wishlistCountries}
+                          </span>
+                          <span className="text-been-muted">
+                            / {wishlistStats.totalCountries}
+                          </span>
+                        </div>
+                        <p className="text-been-muted text-xs mt-1">Countries to visit</p>
+                      </div>
+                      <div className="w-16 h-16 relative">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#2d2d44" strokeWidth="3" />
+                          <circle
+                            cx="18" cy="18" r="15.9"
+                            fill="none"
+                            stroke="#3B82F6"
+                            strokeWidth="3"
+                            strokeDasharray={`${wishlistStats.percentageCountries} 100`}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-blue-500">
+                          {wishlistStats.percentageCountries}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* My Countries/Wishlist Row */}
+                <button
+                  onClick={() => setMobileCountryListOpen(true)}
+                  className="w-full bg-been-card rounded-2xl p-4 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      mapMode === "wishlist" ? "bg-blue-500/20" : "bg-been-accent/20"
+                    }`}>
+                      <svg className={`w-5 h-5 ${mapMode === "wishlist" ? "text-blue-500" : "text-been-accent"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-been-text font-medium">
+                        {mapMode === "wishlist" ? "My Wishlist" : "My Countries"}
+                      </p>
+                      <p className="text-been-muted text-sm">
+                        {mapMode === "wishlist" ? "Places to visit" : "and non-UN territories"}
+                      </p>
+                    </div>
+                  </div>
+                  <svg className="w-5 h-5 text-been-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                {/* Continent Stats Section */}
+                {mapMode === "visited" && (
+                  <div className="pt-2">
+                    <h3 className="text-been-muted text-sm font-medium mb-3 px-1">By Continent</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.values(stats.byContinent).map((continentStats) => (
+                        <div
+                          key={continentStats.continent}
+                          className="bg-been-card rounded-xl p-3"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-been-text text-sm font-medium">
+                              {continentStats.continent}
+                            </span>
+                            <span className="text-been-accent text-xs font-bold">
+                              {continentStats.percentage}%
+                            </span>
+                          </div>
+                          <div className="h-1.5 bg-been-bg rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-been-accent rounded-full transition-all duration-300"
+                              style={{ width: `${continentStats.percentage}%` }}
+                            />
+                          </div>
+                          <p className="text-been-muted text-xs mt-1.5">
+                            {continentStats.visited} / {continentStats.total}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Diary Tab */}
+            {activeTab === "diary" && (
+              <DiaryTab
+                visits={mapMode === "wishlist" ? wishlist : visits}
+                onEntryTap={handleOpenVisitDetail}
+                isWishlist={mapMode === "wishlist"}
+              />
+            )}
+
+            {/* Visualize Tab */}
+            {activeTab === "visualize" && (
+              <VisualizeTab
+                visitedCountries={visitedCountries}
+                wishlistCountries={wishlistCountries}
+                isVisited={isVisited}
+                isWishlisted={isWishlisted}
+                onCountryClick={handleMapCountryClick}
+                onCountryLongPress={handleOpenVisitDetail}
+                mapMode={mapMode}
+              />
+            )}
+
+            {/* Compare Tab */}
+            {activeTab === "compare" && (
+              <CompareTab
+                visitedCountries={visitedCountries}
+                stats={stats}
+                className="h-full"
+              />
+            )}
+
+            {/* Profile Tab */}
+            {activeTab === "profile" && (
+              <ProfileTab
+                user={user}
+                stats={stats}
+                syncStatus={syncStatus}
+                onViewDetails={() => setStatsDrawerOpen(true)}
+                className="h-full"
+              />
+            )}
           </div>
         </div>
 
-        {/* Desktop Map */}
+        {/* Map Panel */}
         <div className="flex-1 h-full relative">
-          {/* Globe View */}
-          <div
-            className={`absolute inset-0 transition-opacity duration-500 ${
-              viewMode === "globe" ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
-          >
-            <Globe
-              visitedCountries={visitedCountries}
-              onCountryClick={handleMapCountryClick}
-              onCountryLongPress={handleOpenVisitDetail}
-              isVisited={isVisited}
-            />
-          </div>
+          {/* Globe View - only render when active to avoid WebGL overhead */}
+          {viewMode === "globe" && (
+            <div className="absolute inset-0">
+              <Globe
+                visitedCountries={visitedCountries}
+                onCountryClick={handleMapCountryClick}
+                onCountryLongPress={handleOpenVisitDetail}
+                isVisited={isVisited}
+              />
+            </div>
+          )}
 
           {/* Flat Map View */}
           <div
@@ -235,6 +405,9 @@ export default function Home() {
               onCountryClick={handleMapCountryClick}
               onCountryLongPress={handleOpenVisitDetail}
               isVisited={isVisited}
+              isWishlisted={isWishlisted}
+              darkMode
+              showWishlist={mapMode === "wishlist"}
             />
           </div>
 
@@ -244,8 +417,8 @@ export default function Home() {
               onClick={() => setIsLocked(!isLocked)}
               className={`p-2 rounded-lg shadow-md backdrop-blur-sm transition-colors ${
                 isLocked
-                  ? "bg-amber-500 text-white"
-                  : "bg-white/90 text-slate-600 hover:bg-slate-100"
+                  ? "bg-been-accent text-been-bg"
+                  : "bg-been-card/90 text-been-text hover:bg-been-card"
               }`}
               title={isLocked ? "Unlock to edit" : "Lock to prevent changes"}
             >
@@ -263,20 +436,19 @@ export default function Home() {
               onClick={() => setViewMode(viewMode === "globe" ? "flat" : "globe")}
               className={`px-3 py-2 text-sm font-medium rounded-lg shadow-md backdrop-blur-sm transition-colors ${
                 viewMode === "globe"
-                  ? "bg-indigo-500 text-white"
-                  : "bg-white/90 text-slate-600 hover:bg-slate-100"
+                  ? "bg-been-accent text-been-bg"
+                  : "bg-been-card/90 text-been-text hover:bg-been-card"
               }`}
             >
               Globe
             </button>
           </div>
 
-          <div className={`absolute bottom-4 left-4 backdrop-blur-sm px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium ${
-            viewMode === "globe" ? "bg-black/70 text-white" : "bg-white/95 text-slate-700"
-          }`}>
+          {/* Status bar */}
+          <div className="absolute bottom-4 left-4 bg-been-card/80 backdrop-blur-sm px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium text-been-text">
             {isLocked ? (
               <span className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-been-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
                 Locked - Unlock to edit
@@ -573,6 +745,11 @@ export default function Home() {
           </div>
         )}
 
+        {/* Add Country FAB */}
+        {activeTab === "select" && (
+          <AddCountryFAB onAddCountry={toggleVisit} isVisited={isVisited} />
+        )}
+
         {/* Bottom Navigation */}
         <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
@@ -642,6 +819,7 @@ export default function Home() {
         isOpen={statsDrawerOpen}
         onClose={() => setStatsDrawerOpen(false)}
         stats={stats}
+        darkMode
       />
 
       {/* Visit Detail Modal */}

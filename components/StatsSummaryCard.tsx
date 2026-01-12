@@ -56,7 +56,7 @@ export default function StatsSummaryCard({ percentage, visited, total, onTap }: 
               cy="50"
               r={radius}
               fill="none"
-              stroke="#F5A623"
+              style={{ stroke: "var(--been-accent)" }}
               strokeWidth="8"
               strokeLinecap="round"
               strokeDasharray={circumference}

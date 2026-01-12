@@ -167,8 +167,50 @@ export default function FlatMap({
   staticMode = false,
   showWishlist = false,
 }: FlatMapProps) {
+  // State for accent color from CSS variable
+  const [accentColor, setAccentColor] = useState("#059669");
+
+  // Load accent color from CSS variable and listen for changes
+  useEffect(() => {
+    const getAccentColor = () => {
+      const color = getComputedStyle(document.documentElement)
+        .getPropertyValue("--been-accent")
+        .trim();
+      if (color) setAccentColor(color);
+    };
+
+    getAccentColor();
+
+    // Listen for storage events (when color is changed in settings)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "accentColor" && e.newValue) {
+        setAccentColor(e.newValue);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    // Also check periodically for CSS variable changes (for same-tab updates)
+    const interval = setInterval(getAccentColor, 500);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Function to darken a hex color
+  const darkenColor = (hex: string, percent: number): string => {
+    const num = parseInt(hex.replace("#", ""), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = Math.max(0, (num >> 16) - amt);
+    const G = Math.max(0, ((num >> 8) & 0x00ff) - amt);
+    const B = Math.max(0, (num & 0x0000ff) - amt);
+    return `#${((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1)}`;
+  };
+
   // Colors based on mode - memoized to avoid re-renders
   const colors = useMemo(() => {
+    const accentHover = darkenColor(accentColor, 10);
     if (darkMode) {
       return showWishlist
         ? {
@@ -181,8 +223,8 @@ export default function FlatMap({
           }
         : {
             ocean: "#000000",
-            highlighted: "#F5A623", // Orange for visited
-            highlightedHover: "#D4890F",
+            highlighted: accentColor, // Use dynamic accent color for visited
+            highlightedHover: accentHover,
             unvisited: "#2d2d44",
             unvisitedHover: "#3d3d54",
             stroke: "#1C1C1E",
@@ -199,13 +241,13 @@ export default function FlatMap({
         }
       : {
           ocean: "#e8f4fc",
-          highlighted: "#6366f1", // Purple for visited
+          highlighted: "#6366f1", // Purple for visited (light mode)
           highlightedHover: "#4f46e5",
           unvisited: "#d1d5db",
           unvisitedHover: "#9ca3af",
           stroke: "#ffffff",
         };
-  }, [darkMode, showWishlist]);
+  }, [darkMode, showWishlist, accentColor]);
 
   // Determine which check function to use
   const isHighlighted = useCallback((countryId: string): boolean => {

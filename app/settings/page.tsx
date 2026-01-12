@@ -6,6 +6,14 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
+// Preset accent colors (just Green and Gold as defaults)
+const ACCENT_PRESETS = [
+  { name: "Emerald", value: "#059669" },
+  { name: "Gold", value: "#F5A623" },
+];
+
+const DEFAULT_ACCENT = "#059669";
+
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -14,8 +22,25 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [accentColor, setAccentColor] = useState(DEFAULT_ACCENT);
   const router = useRouter();
   const supabase = createClient();
+
+  // Load saved accent color
+  useEffect(() => {
+    const savedColor = localStorage.getItem("accentColor");
+    if (savedColor) {
+      setAccentColor(savedColor);
+    }
+  }, []);
+
+  // Save and apply accent color
+  const handleColorChange = (color: string) => {
+    setAccentColor(color);
+    localStorage.setItem("accentColor", color);
+    // Apply to CSS variable
+    document.documentElement.style.setProperty("--been-accent", color);
+  };
 
   useEffect(() => {
     const getUser = async () => {
@@ -116,6 +141,74 @@ export default function SettingsPage() {
                 {new Date(user.created_at).toLocaleDateString()}
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Appearance */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4">Appearance</h2>
+          <p className="text-sm text-slate-500 mb-4">Choose your accent color</p>
+
+          {/* Preset colors */}
+          <div className="flex items-center gap-3 mb-4">
+            {ACCENT_PRESETS.map((preset) => (
+              <button
+                key={preset.value}
+                onClick={() => handleColorChange(preset.value)}
+                className={`w-12 h-12 rounded-full transition-all flex items-center justify-center ${
+                  accentColor === preset.value
+                    ? "ring-2 ring-offset-2 ring-slate-400 scale-110"
+                    : "hover:scale-105"
+                }`}
+                style={{ backgroundColor: preset.value }}
+                title={preset.name}
+              >
+                {accentColor === preset.value && (
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            ))}
+
+            {/* Color wheel picker */}
+            <div className="relative">
+              <input
+                type="color"
+                value={accentColor}
+                onChange={(e) => handleColorChange(e.target.value)}
+                className="absolute inset-0 w-12 h-12 opacity-0 cursor-pointer"
+                title="Choose custom color"
+              />
+              <div
+                className={`w-12 h-12 rounded-full transition-all flex items-center justify-center border-2 border-dashed border-slate-300 ${
+                  !ACCENT_PRESETS.some(p => p.value === accentColor)
+                    ? "ring-2 ring-offset-2 ring-slate-400 scale-110"
+                    : "hover:scale-105 hover:border-slate-400"
+                }`}
+                style={{
+                  backgroundColor: !ACCENT_PRESETS.some(p => p.value === accentColor)
+                    ? accentColor
+                    : "transparent"
+                }}
+              >
+                {!ACCENT_PRESETS.some(p => p.value === accentColor) ? (
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                  </svg>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Current color display */}
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <span>Current:</span>
+            <span className="font-mono uppercase">{accentColor}</span>
           </div>
         </div>
 
