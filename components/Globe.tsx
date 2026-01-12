@@ -290,7 +290,7 @@ export default function Globe({
           width={dimensions.width}
           height={dimensions.height}
           backgroundColor="rgba(0,0,0,0)"
-          globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
+          globeImageUrl="https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg"
           polygonsData={countries}
           polygonCapColor={getColor}
           polygonSideColor={() => "rgba(100, 100, 120, 0.2)"}

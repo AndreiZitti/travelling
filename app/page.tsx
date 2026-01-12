@@ -91,6 +91,39 @@ export default function Home() {
     }
   };
 
+  // Handle swipe for map carousel
+  const handleSwipe = (direction: 'left' | 'right') => {
+    if (direction === 'left' && viewMode === 'flat') {
+      setViewMode('globe');
+    } else if (direction === 'right' && viewMode === 'globe') {
+      setViewMode('flat');
+    }
+  };
+
+  // Handle share button
+  const handleShare = async () => {
+    const shareData = {
+      title: 'Zeen - My Travel Map',
+      text: `I've visited ${stats.visitedCountries} countries (${stats.percentageCountries}% of the world)! Check out my travel map.`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(
+          `${shareData.text}\n${shareData.url}`
+        );
+        alert('Link copied to clipboard!');
+      }
+    } catch (err) {
+      // User cancelled or error
+      console.log('Share cancelled or failed:', err);
+    }
+  };
+
   if (!isLoaded) {
     return (
       <div className="w-screen h-screen flex items-center justify-center bg-slate-100">
@@ -108,7 +141,10 @@ export default function Home() {
             <h1 className="text-2xl font-bold text-been-accent">Zeen</h1>
             <div className="flex items-center gap-2">
               <SyncStatus status={syncStatus} />
-              <button className="p-2 rounded-lg hover:bg-been-card transition-colors">
+              <button 
+                onClick={handleShare}
+                className="p-2 rounded-lg hover:bg-been-card transition-colors"
+              >
                 <svg className="w-6 h-6 text-been-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
@@ -264,8 +300,22 @@ export default function Home() {
       <div className="md:hidden w-full h-full bg-been-bg" style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
         {/* Select Tab - Always mounted to prevent reinitialization of heavy components */}
         <div className={`w-full h-full pt-24 flex flex-col ${activeTab !== "select" ? "hidden" : ""}`}>
-            {/* Map Area - larger height */}
-            <div className="relative" style={{ height: "50%" }}>
+            {/* Map Area - larger height with swipe support */}
+            <motion.div 
+              className="relative" 
+              style={{ height: "50%" }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(_, info) => {
+                const swipeThreshold = 50;
+                if (info.offset.x < -swipeThreshold) {
+                  handleSwipe('left');
+                } else if (info.offset.x > swipeThreshold) {
+                  handleSwipe('right');
+                }
+              }}
+            >
               {/* Globe View */}
               <div
                 className={`absolute inset-0 transition-opacity duration-500 ${
@@ -301,7 +351,7 @@ export default function Home() {
               {/* Full view button overlay */}
               <button
                 onClick={() => setFullMode(true)}
-                className="absolute top-3 right-3 p-2 rounded-lg bg-been-card/80 backdrop-blur-sm"
+                className="absolute top-3 right-3 p-2 rounded-lg bg-been-card/80 backdrop-blur-sm z-10"
               >
                 <svg className="w-5 h-5 text-been-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" strokeLinecap="round" strokeLinejoin="round"/>
@@ -309,7 +359,7 @@ export default function Home() {
               </button>
 
               {/* Carousel dots */}
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10">
                 <button
                   onClick={() => setViewMode("flat")}
                   className={`w-2 h-2 rounded-full transition-colors ${
@@ -323,7 +373,7 @@ export default function Home() {
                   }`}
                 />
               </div>
-            </div>
+            </motion.div>
 
             {/* Divider */}
             <div className="h-px bg-been-card mx-4" />
@@ -423,15 +473,13 @@ export default function Home() {
         {/* Visualize Tab */}
         {activeTab === "visualize" && (
           <VisualizeTab
-            onSelectOption={(optionId) => {
-              if (optionId === "globe") {
-                setViewMode("globe");
-                setActiveTab("select");
-              } else if (optionId === "zoomable") {
-                setViewMode("flat");
-                setActiveTab("select");
-              }
-            }}
+            visitedCountries={visitedCountries}
+            wishlistCountries={wishlistCountries}
+            isVisited={isVisited}
+            isWishlisted={isWishlisted}
+            onCountryClick={handleMapCountryClick}
+            onCountryLongPress={handleOpenVisitDetail}
+            mapMode={mapMode}
           />
         )}
 

@@ -1,6 +1,27 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
+
+// Dynamic imports to avoid SSR issues
+const FlatMap = dynamic(() => import('@/components/FlatMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-been-bg">
+      <div className="text-been-muted">Loading map...</div>
+    </div>
+  ),
+});
+
+const Globe = dynamic(() => import('@/components/Globe'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-been-bg">
+      <div className="text-been-muted">Loading globe...</div>
+    </div>
+  ),
+});
 
 interface VisualizationOption {
   id: string;
@@ -10,7 +31,13 @@ interface VisualizationOption {
 }
 
 interface VisualizeTabProps {
-  onSelectOption: (optionId: string) => void;
+  visitedCountries: Set<string>;
+  wishlistCountries: Set<string>;
+  isVisited: (countryId: string) => boolean;
+  isWishlisted: (countryId: string) => boolean;
+  onCountryClick: (countryId: string) => void;
+  onCountryLongPress: (countryId: string) => void;
+  mapMode: 'visited' | 'wishlist';
 }
 
 const visualizationOptions: VisualizationOption[] = [
@@ -81,7 +108,89 @@ const visualizationOptions: VisualizationOption[] = [
   },
 ];
 
-export default function VisualizeTab({ onSelectOption }: VisualizeTabProps) {
+type ViewType = 'menu' | 'globe' | 'zoomable';
+
+export default function VisualizeTab({
+  visitedCountries,
+  wishlistCountries,
+  isVisited,
+  isWishlisted,
+  onCountryClick,
+  onCountryLongPress,
+  mapMode,
+}: VisualizeTabProps) {
+  const [selectedView, setSelectedView] = useState<ViewType>('menu');
+
+  const handleSelectOption = (optionId: string) => {
+    if (optionId === 'globe' || optionId === 'zoomable') {
+      setSelectedView(optionId);
+    }
+  };
+
+  // Render the visualization view
+  if (selectedView !== 'menu') {
+    return (
+      <div className="h-full bg-been-bg flex flex-col">
+        {/* Header with back button */}
+        <div className="flex items-center gap-3 p-4 border-b border-been-card">
+          <button
+            onClick={() => setSelectedView('menu')}
+            className="p-2 rounded-lg hover:bg-been-card transition-colors"
+          >
+            <svg className="w-6 h-6 text-been-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 className="text-xl font-bold text-been-text">
+            {selectedView === 'globe' ? 'Globe View' : 'Zoomable Map'}
+          </h1>
+        </div>
+
+        {/* Visualization container */}
+        <div className="flex-1 relative">
+          <AnimatePresence mode="wait">
+            {selectedView === 'globe' && (
+              <motion.div
+                key="globe"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0"
+              >
+                <Globe
+                  visitedCountries={mapMode === 'wishlist' ? wishlistCountries : visitedCountries}
+                  onCountryClick={onCountryClick}
+                  onCountryLongPress={onCountryLongPress}
+                  isVisited={mapMode === 'wishlist' ? isWishlisted : isVisited}
+                  darkMode
+                />
+              </motion.div>
+            )}
+            {selectedView === 'zoomable' && (
+              <motion.div
+                key="zoomable"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0"
+              >
+                <FlatMap
+                  onCountryClick={onCountryClick}
+                  onCountryLongPress={onCountryLongPress}
+                  isVisited={isVisited}
+                  isWishlisted={isWishlisted}
+                  darkMode
+                  showWishlist={mapMode === 'wishlist'}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    );
+  }
+
+  // Render the menu
   return (
     <div className="h-full bg-been-bg p-4 overflow-y-auto dark-scroll">
       <h1 className="text-3xl font-bold text-been-text mb-6">Visualize</h1>
@@ -90,7 +199,7 @@ export default function VisualizeTab({ onSelectOption }: VisualizeTabProps) {
         {visualizationOptions.map((option) => (
           <motion.button
             key={option.id}
-            onClick={() => option.available && onSelectOption(option.id)}
+            onClick={() => option.available && handleSelectOption(option.id)}
             className={`bg-been-card rounded-2xl p-4 h-32 flex flex-col justify-between items-start text-left relative ${
               !option.available ? 'opacity-50' : ''
             }`}
