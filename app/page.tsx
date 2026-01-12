@@ -317,8 +317,8 @@ export default function Home() {
             {/* Divider */}
             <div className="h-px bg-been-card mx-4" />
 
-            {/* Stats Section */}
-            <div className="p-4 space-y-3 overflow-y-auto dark-scroll">
+            {/* Stats Section - scrollable */}
+            <div className="flex-1 p-4 space-y-3 overflow-y-auto dark-scroll">
               {/* Stats Summary Card */}
               {mapMode === "visited" ? (
                 <StatsSummaryCard
@@ -397,6 +397,40 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
+
+              {/* Continent Stats Section */}
+              {mapMode === "visited" && (
+                <div className="pt-2">
+                  <h3 className="text-been-muted text-sm font-medium mb-3 px-1">By Continent</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.values(stats.byContinent).map((continentStats) => (
+                      <div
+                        key={continentStats.continent}
+                        className="bg-been-card rounded-xl p-3"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-been-text text-sm font-medium">
+                            {continentStats.continent}
+                          </span>
+                          <span className="text-been-accent text-xs font-bold">
+                            {continentStats.percentage}%
+                          </span>
+                        </div>
+                        {/* Progress bar */}
+                        <div className="h-1.5 bg-been-bg rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-been-accent rounded-full transition-all duration-300"
+                            style={{ width: `${continentStats.percentage}%` }}
+                          />
+                        </div>
+                        <p className="text-been-muted text-xs mt-1.5">
+                          {continentStats.visited} / {continentStats.total}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
