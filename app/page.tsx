@@ -91,15 +91,6 @@ export default function Home() {
     }
   };
 
-  // Handle swipe for map carousel
-  const handleSwipe = (direction: 'left' | 'right') => {
-    if (direction === 'left' && viewMode === 'flat') {
-      setViewMode('globe');
-    } else if (direction === 'right' && viewMode === 'globe') {
-      setViewMode('flat');
-    }
-  };
-
   // Handle share button
   const handleShare = async () => {
     const shareData = {
@@ -300,53 +291,17 @@ export default function Home() {
       <div className="md:hidden w-full h-full bg-been-bg" style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
         {/* Select Tab - Always mounted to prevent reinitialization of heavy components */}
         <div className={`w-full h-full pt-24 flex flex-col ${activeTab !== "select" ? "hidden" : ""}`}>
-            {/* Map Area - larger height with swipe support */}
-            <motion.div 
-              className="relative" 
-              style={{ height: "50%" }}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.2}
-              onDragEnd={(_, info) => {
-                const swipeThreshold = 50;
-                if (info.offset.x < -swipeThreshold) {
-                  handleSwipe('left');
-                } else if (info.offset.x > swipeThreshold) {
-                  handleSwipe('right');
-                }
-              }}
-            >
-              {/* Globe View */}
-              <div
-                className={`absolute inset-0 transition-opacity duration-500 ${
-                  viewMode === "globe" ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
-              >
-                <Globe
-                  visitedCountries={mapMode === "wishlist" ? wishlistCountries : visitedCountries}
-                  onCountryClick={handleMapCountryClick}
-                  onCountryLongPress={handleOpenVisitDetail}
-                  isVisited={mapMode === "wishlist" ? isWishlisted : isVisited}
-                  darkMode
-                />
-              </div>
-
-              {/* Flat Map View - Static (no zoom/pan) */}
-              <div
-                className={`absolute inset-0 transition-opacity duration-500 ${
-                  viewMode === "flat" ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
-              >
-                <FlatMap
-                  onCountryClick={handleMapCountryClick}
-                  onCountryLongPress={handleOpenVisitDetail}
-                  isVisited={isVisited}
-                  isWishlisted={isWishlisted}
-                  darkMode
-                  staticMode
-                  showWishlist={mapMode === "wishlist"}
-                />
-              </div>
+            {/* Map Area - FlatMap only */}
+            <div className="relative" style={{ height: "50%" }}>
+              <FlatMap
+                onCountryClick={handleMapCountryClick}
+                onCountryLongPress={handleOpenVisitDetail}
+                isVisited={isVisited}
+                isWishlisted={isWishlisted}
+                darkMode
+                staticMode
+                showWishlist={mapMode === "wishlist"}
+              />
 
               {/* Full view button overlay */}
               <button
@@ -357,23 +312,7 @@ export default function Home() {
                   <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
-
-              {/* Carousel dots */}
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10">
-                <button
-                  onClick={() => setViewMode("flat")}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    viewMode === "flat" ? "bg-been-accent" : "bg-been-muted"
-                  }`}
-                />
-                <button
-                  onClick={() => setViewMode("globe")}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    viewMode === "globe" ? "bg-been-accent" : "bg-been-muted"
-                  }`}
-                />
-              </div>
-            </motion.div>
+            </div>
 
             {/* Divider */}
             <div className="h-px bg-been-card mx-4" />
