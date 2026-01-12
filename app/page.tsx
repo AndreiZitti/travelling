@@ -137,7 +137,7 @@ export default function Home() {
             <h1 className="text-2xl font-bold text-been-accent">Zeen</h1>
             <div className="flex items-center gap-2">
               <SyncStatus status={syncStatus} />
-              <button 
+              <button
                 onClick={handleShare}
                 className="p-2 rounded-lg hover:bg-been-card transition-colors"
               >
@@ -159,21 +159,19 @@ export default function Home() {
           <div className="flex bg-been-card rounded-lg p-1">
             <button
               onClick={() => setMapMode("visited")}
-              className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
-                mapMode === "visited"
+              className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${mapMode === "visited"
                   ? "bg-been-accent text-been-bg"
                   : "text-been-muted hover:text-been-text"
-              }`}
+                }`}
             >
               Visited
             </button>
             <button
               onClick={() => setMapMode("wishlist")}
-              className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
-                mapMode === "wishlist"
+              className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${mapMode === "wishlist"
                   ? "bg-blue-500 text-white"
                   : "text-been-muted hover:text-been-text"
-              }`}
+                }`}
             >
               Wishlist
             </button>
@@ -208,21 +206,19 @@ export default function Home() {
                 <div className="flex bg-been-card rounded-lg p-1">
                   <button
                     onClick={() => setMapMode("visited")}
-                    className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
-                      mapMode === "visited"
+                    className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${mapMode === "visited"
                         ? "bg-been-accent text-been-bg"
                         : "text-been-muted hover:text-been-text"
-                    }`}
+                      }`}
                   >
                     Visited
                   </button>
                   <button
                     onClick={() => setMapMode("wishlist")}
-                    className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
-                      mapMode === "wishlist"
+                    className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${mapMode === "wishlist"
                         ? "bg-blue-500 text-white"
                         : "text-been-muted hover:text-been-text"
-                    }`}
+                      }`}
                   >
                     Wishlist
                   </button>
@@ -280,12 +276,11 @@ export default function Home() {
                   className="w-full bg-been-card rounded-2xl p-4 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      mapMode === "wishlist" ? "bg-blue-500/20" : "bg-been-accent/20"
-                    }`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${mapMode === "wishlist" ? "bg-blue-500/20" : "bg-been-accent/20"
+                      }`}>
                       <svg className={`w-5 h-5 ${mapMode === "wishlist" ? "text-blue-500" : "text-been-accent"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
-                        <circle cx="12" cy="10" r="3"/>
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                        <circle cx="12" cy="10" r="3" />
                       </svg>
                     </div>
                     <div className="text-left">
@@ -397,9 +392,8 @@ export default function Home() {
 
           {/* Flat Map View */}
           <div
-            className={`absolute inset-0 transition-opacity duration-500 ${
-              viewMode === "flat" ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
+            className={`absolute inset-0 transition-opacity duration-500 ${viewMode === "flat" ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
           >
             <FlatMap
               onCountryClick={handleMapCountryClick}
@@ -415,11 +409,10 @@ export default function Home() {
           <div className="absolute top-4 right-4 flex items-center gap-2">
             <button
               onClick={() => setIsLocked(!isLocked)}
-              className={`p-2 rounded-lg shadow-md backdrop-blur-sm transition-colors ${
-                isLocked
+              className={`p-2 rounded-lg shadow-md backdrop-blur-sm transition-colors ${isLocked
                   ? "bg-been-accent text-been-bg"
                   : "bg-been-card/90 text-been-text hover:bg-been-card"
-              }`}
+                }`}
               title={isLocked ? "Unlock to edit" : "Lock to prevent changes"}
             >
               {isLocked ? (
@@ -434,11 +427,10 @@ export default function Home() {
             </button>
             <button
               onClick={() => setViewMode(viewMode === "globe" ? "flat" : "globe")}
-              className={`px-3 py-2 text-sm font-medium rounded-lg shadow-md backdrop-blur-sm transition-colors ${
-                viewMode === "globe"
+              className={`px-3 py-2 text-sm font-medium rounded-lg shadow-md backdrop-blur-sm transition-colors ${viewMode === "globe"
                   ? "bg-been-accent text-been-bg"
                   : "bg-been-card/90 text-been-text hover:bg-been-card"
-              }`}
+                }`}
             >
               Globe
             </button>
@@ -464,148 +456,147 @@ export default function Home() {
       <div className="md:hidden w-full h-full bg-been-bg" style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
         {/* Select Tab - Always mounted to prevent reinitialization of heavy components */}
         <div className={`w-full h-full pt-24 overflow-y-auto dark-scroll ${activeTab !== "select" ? "hidden" : ""}`}>
-            {/* Map Area - FlatMap only */}
-            <div className="relative h-[45vh] min-h-[280px]">
-              <FlatMap
-                onCountryClick={handleMapCountryClick}
-                onCountryLongPress={handleOpenVisitDetail}
-                isVisited={isVisited}
-                isWishlisted={isWishlisted}
-                darkMode
-                staticMode
-                showWishlist={mapMode === "wishlist"}
+          {/* Map Area - FlatMap only */}
+          <div className="relative h-[45vh] min-h-[280px]">
+            <FlatMap
+              onCountryClick={handleMapCountryClick}
+              onCountryLongPress={handleOpenVisitDetail}
+              isVisited={isVisited}
+              isWishlisted={isWishlisted}
+              darkMode
+              staticMode
+              showWishlist={mapMode === "wishlist"}
+            />
+
+            {/* Full view button overlay */}
+            <button
+              onClick={() => setFullMode(true)}
+              className="absolute top-3 right-3 p-2 rounded-lg bg-been-card/80 backdrop-blur-sm z-10"
+            >
+              <svg className="w-5 h-5 text-been-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-been-card mx-4" />
+
+          {/* Stats Section */}
+          <div className="p-4 space-y-3">
+            {/* Stats Summary Card */}
+            {mapMode === "visited" ? (
+              <StatsSummaryCard
+                percentage={stats.percentageCountries}
+                visited={stats.visitedCountries}
+                total={stats.totalCountries}
+                onTap={() => setMobileStatsModalOpen(true)}
               />
-
-              {/* Full view button overlay */}
-              <button
-                onClick={() => setFullMode(true)}
-                className="absolute top-3 right-3 p-2 rounded-lg bg-been-card/80 backdrop-blur-sm z-10"
+            ) : (
+              <div
+                onClick={() => setMobileStatsModalOpen(true)}
+                className="bg-been-card rounded-2xl p-4 cursor-pointer"
               >
-                <svg className="w-5 h-5 text-been-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
-
-            {/* Divider */}
-            <div className="h-px bg-been-card mx-4" />
-
-            {/* Stats Section */}
-            <div className="p-4 space-y-3">
-              {/* Stats Summary Card */}
-              {mapMode === "visited" ? (
-                <StatsSummaryCard
-                  percentage={stats.percentageCountries}
-                  visited={stats.visitedCountries}
-                  total={stats.totalCountries}
-                  onTap={() => setMobileStatsModalOpen(true)}
-                />
-              ) : (
-                <div
-                  onClick={() => setMobileStatsModalOpen(true)}
-                  className="bg-been-card rounded-2xl p-4 cursor-pointer"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-been-muted text-sm">Wishlist</p>
-                      <div className="flex items-baseline gap-2 mt-1">
-                        <span className="text-3xl font-bold text-blue-500">
-                          {wishlistStats.wishlistCountries}
-                        </span>
-                        <span className="text-been-muted">
-                          / {wishlistStats.totalCountries}
-                        </span>
-                      </div>
-                      <p className="text-been-muted text-xs mt-1">Countries to visit</p>
-                    </div>
-                    <div className="w-16 h-16 relative">
-                      <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                        <circle
-                          cx="18" cy="18" r="15.9"
-                          fill="none"
-                          stroke="#2d2d44"
-                          strokeWidth="3"
-                        />
-                        <circle
-                          cx="18" cy="18" r="15.9"
-                          fill="none"
-                          stroke="#3B82F6"
-                          strokeWidth="3"
-                          strokeDasharray={`${wishlistStats.percentageCountries} 100`}
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-blue-500">
-                        {wishlistStats.percentageCountries}%
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-been-muted text-sm">Wishlist</p>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-3xl font-bold text-blue-500">
+                        {wishlistStats.wishlistCountries}
+                      </span>
+                      <span className="text-been-muted">
+                        / {wishlistStats.totalCountries}
                       </span>
                     </div>
+                    <p className="text-been-muted text-xs mt-1">Countries to visit</p>
                   </div>
-                </div>
-              )}
-
-              {/* My Countries/Wishlist Row */}
-              <button
-                onClick={() => setActiveTab("diary")}
-                className="w-full bg-been-card rounded-2xl p-4 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    mapMode === "wishlist" ? "bg-blue-500/20" : "bg-been-accent/20"
-                  }`}>
-                    <svg className={`w-5 h-5 ${mapMode === "wishlist" ? "text-blue-500" : "text-been-accent"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
-                      <circle cx="12" cy="10" r="3"/>
+                  <div className="w-16 h-16 relative">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                      <circle
+                        cx="18" cy="18" r="15.9"
+                        fill="none"
+                        stroke="#2d2d44"
+                        strokeWidth="3"
+                      />
+                      <circle
+                        cx="18" cy="18" r="15.9"
+                        fill="none"
+                        stroke="#3B82F6"
+                        strokeWidth="3"
+                        strokeDasharray={`${wishlistStats.percentageCountries} 100`}
+                        strokeLinecap="round"
+                      />
                     </svg>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-been-text font-medium">
-                      {mapMode === "wishlist" ? "My Wishlist" : "My Countries"}
-                    </p>
-                    <p className="text-been-muted text-sm">
-                      {mapMode === "wishlist" ? "Places to visit" : "and non-UN territories"}
-                    </p>
+                    <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-blue-500">
+                      {wishlistStats.percentageCountries}%
+                    </span>
                   </div>
                 </div>
-                <svg className="w-5 h-5 text-been-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+              </div>
+            )}
 
-              {/* Continent Stats Section */}
-              {mapMode === "visited" && (
-                <div className="pt-2">
-                  <h3 className="text-been-muted text-sm font-medium mb-3 px-1">By Continent</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {Object.values(stats.byContinent).map((continentStats) => (
-                      <div
-                        key={continentStats.continent}
-                        className="bg-been-card rounded-xl p-3"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-been-text text-sm font-medium">
-                            {continentStats.continent}
-                          </span>
-                          <span className="text-been-accent text-xs font-bold">
-                            {continentStats.percentage}%
-                          </span>
-                        </div>
-                        {/* Progress bar */}
-                        <div className="h-1.5 bg-been-bg rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-been-accent rounded-full transition-all duration-300"
-                            style={{ width: `${continentStats.percentage}%` }}
-                          />
-                        </div>
-                        <p className="text-been-muted text-xs mt-1.5">
-                          {continentStats.visited} / {continentStats.total}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+            {/* My Countries/Wishlist Row */}
+            <button
+              onClick={() => setActiveTab("diary")}
+              className="w-full bg-been-card rounded-2xl p-4 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${mapMode === "wishlist" ? "bg-blue-500/20" : "bg-been-accent/20"
+                  }`}>
+                  <svg className={`w-5 h-5 ${mapMode === "wishlist" ? "text-blue-500" : "text-been-accent"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
                 </div>
-              )}
-            </div>
+                <div className="text-left">
+                  <p className="text-been-text font-medium">
+                    {mapMode === "wishlist" ? "My Wishlist" : "My Countries"}
+                  </p>
+                  <p className="text-been-muted text-sm">
+                    {mapMode === "wishlist" ? "Places to visit" : "and non-UN territories"}
+                  </p>
+                </div>
+              </div>
+              <svg className="w-5 h-5 text-been-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            {/* Continent Stats Section */}
+            {mapMode === "visited" && (
+              <div className="pt-2">
+                <h3 className="text-been-muted text-sm font-medium mb-3 px-1">By Continent</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.values(stats.byContinent).map((continentStats) => (
+                    <div
+                      key={continentStats.continent}
+                      className="bg-been-card rounded-xl p-3"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-been-text text-sm font-medium">
+                          {continentStats.continent}
+                        </span>
+                        <span className="text-been-accent text-xs font-bold">
+                          {continentStats.percentage}%
+                        </span>
+                      </div>
+                      {/* Progress bar */}
+                      <div className="h-1.5 bg-been-bg rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-been-accent rounded-full transition-all duration-300"
+                          style={{ width: `${continentStats.percentage}%` }}
+                        />
+                      </div>
+                      <p className="text-been-muted text-xs mt-1.5">
+                        {continentStats.visited} / {continentStats.total}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+        </div>
 
         {/* Diary Tab */}
         {activeTab === "diary" && (
@@ -682,8 +673,8 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-been-bg flex items-center justify-center">
                   <svg className="w-5 h-5 text-been-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <rect x="7" y="7" width="10" height="10" rx="1" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" strokeLinecap="round" strokeLinejoin="round" />
+                    <rect x="7" y="7" width="10" height="10" rx="1" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
                 <div>
@@ -746,9 +737,9 @@ export default function Home() {
         )}
 
         {/* Add Country FAB */}
-        {activeTab === "select" && (
+        {/* {activeTab === "select" && (
           <AddCountryFAB onAddCountry={toggleVisit} isVisited={isVisited} />
-        )}
+        )} */}
 
         {/* Bottom Navigation */}
         <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
